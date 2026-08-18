@@ -1,0 +1,209 @@
+hrms/
+│
+├── pom.xml
+│
+├── src/
+│   │
+│   ├── main/
+│   │   │
+│   │   ├── java/
+│   │   │   │
+│   │   │   └── com/
+│   │   │       │
+│   │   │       └── hrms/
+│   │   │           │
+│   │   │           ├── HrmsApplication.java
+│   │   │           │
+│   │   │           ├── config/
+│   │   │           │   ├── SecurityConfig.java
+│   │   │           │   ├── JwtConfig.java
+│   │   │           │   └── AppConfig.java
+│   │   │           │
+│   │   │           ├── security/
+│   │   │           │   ├── JwtAuthFilter.java
+│   │   │           │   ├── JwtTokenProvider.java
+│   │   │           │   └── UserDetailsServiceImpl.java
+│   │   │           │
+│   │   │           ├── common/
+│   │   │           │   │
+│   │   │           │   ├── exception/
+│   │   │           │   │   ├── GlobalExceptionHandler.java
+│   │   │           │   │   ├── ResourceNotFoundException.java
+│   │   │           │   │   ├── BadRequestException.java
+│   │   │           │   │   └── UnauthorizedException.java
+│   │   │           │   │
+│   │   │           │   ├── dto/
+│   │   │           │   │   └── ApiResponse.java
+│   │   │           │   │
+│   │   │           │   ├── mapper/
+│   │   │           │   │   └── MapperUtil.java
+│   │   │           │   │
+│   │   │           │   └── utils/
+│   │   │           │       └── DateTimeUtil.java
+│   │   │           │
+│   │   │           └── modules/
+│   │   │               │
+│   │   │               ├── auth/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── AuthController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── AuthService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── UserRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   ├── User.java
+│   │   │               │   │   └── UserStatus.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │                   │       ├── LoginRequest.java
+│   │   │                   │       └── LoginResponse.java
+│   │   │               │
+│   │   │               ├── role/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── RoleController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── RoleService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── RoleRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   └── Role.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │               │       ├── RoleRequest.java
+│   │   │               │       └── RoleResponse.java
+│   │   │               │
+│   │   │               ├── employee/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── EmployeeController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── EmployeeService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── EmployeeRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   ├── Employee.java
+│   │   │               │   │   └── EmployeeStatus.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │               │       ├── EmployeeRequest.java
+│   │   │               │       ├── EmployeeUpdateRequest.java
+│   │   │               │       └── EmployeeResponse.java
+│   │   │               │
+│   │   │               ├── department/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── DepartmentController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── DepartmentService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── DepartmentRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   └── Department.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │               │       ├── DepartmentRequest.java
+│   │   │               │       └── DepartmentResponse.java
+│   │   │               │
+│   │   │               ├── leave/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── LeaveController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── LeaveService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── LeaveRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   ├── Leave.java
+│   │   │               │   │   ├── LeaveType.java
+│   │   │               │   │   └── LeaveStatus.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │               │       ├── LeaveRequest.java
+│   │   │               │       └── LeaveResponse.java
+│   │   │               │
+│   │   │               ├── attendance/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── AttendanceController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── AttendanceService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── AttendanceRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   ├── Attendance.java
+│   │   │               │   │   └── AttendanceStatus.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │               │       ├── AttendanceRequest.java
+│   │   │               │       └── AttendanceResponse.java
+│   │   │               │
+│   │   │               ├── payroll/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── PayrollController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── PayrollService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── PayrollRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   ├── Payroll.java
+│   │   │               │   │   └── PayrollStatus.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │               │       ├── PayrollRequest.java
+│   │   │               │       └── PayrollResponse.java
+│   │   │               │
+│   │   │               ├── notification/
+│   │   │               │   ├── controller/
+│   │   │               │   │   └── NotificationController.java
+│   │   │               │   │
+│   │   │               │   ├── service/
+│   │   │               │   │   └── NotificationService.java
+│   │   │               │   │
+│   │   │               │   ├── repository/
+│   │   │               │   │   └── NotificationRepository.java
+│   │   │               │   │
+│   │   │               │   ├── entity/
+│   │   │               │   │   └── Notification.java
+│   │   │               │   │
+│   │   │               │   └── dto/
+│   │   │               │       └── NotificationResponse.java
+│   │   │               │
+│   │   │               └── reports/
+│   │   │                   ├── controller/
+│   │   │                   │   └── ReportController.java
+│   │   │                   │
+│   │   │                   ├── service/
+│   │   │                   │   └── ReportService.java
+│   │   │                   │
+│   │   │                   └── dto/
+│   │   │                       ├── AttendanceReportResponse.java
+│   │   │                       ├── LeaveReportResponse.java
+│   │   │                       └── PayrollReportResponse.java
+│   │   │
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       └── static/
+│   │
+│   └── test/
+│       └── java/
+│           └── com/
+│               └── hrms/
+│
+└── .gitignore
