@@ -2,16 +2,19 @@ package com.hrms.hrms.modules.auth.repository;
 
 import com.hrms.hrms.modules.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
+import java.util.UUID;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository
+        extends JpaRepository<User, UUID> {
 
-    Optional<User> findByUsername(String username);
-
+    // Find user by email.
     Optional<User> findByEmail(String email);
 
-    boolean existsByUsername(String username);
-
+    // Check whether email is already registered.
     boolean existsByEmail(String email);
+
+    // Check whether any user is assigned to a particular role.
+    // This will be used before deleting a role.
+    boolean existsByRoleId(UUID roleId);
 }

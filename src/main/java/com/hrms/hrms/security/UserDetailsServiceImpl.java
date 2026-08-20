@@ -5,14 +5,14 @@ import com.hrms.hrms.modules.auth.entity.UserStatus;
 import com.hrms.hrms.modules.auth.repository.UserRepository;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
-
     private final UserRepository userRepository;
 
     public UserDetailsServiceImpl(UserRepository userRepository) {
@@ -20,28 +20,20 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username)
+    public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
-        // Get our database User
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                "User not found: " + username
-                        )
-                );
+        // Find user using email
+        User user = userRepository.findByEmail(email).orElseThrow(() ->
+                        new UsernameNotFoundException("User not found with email: " + email));
 
-        // Convert database User -> Spring Security UserDetails
+        // Convert database user into Spring Security user
         return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
+                .builder()
+                .username(user.getEmail())
                 .password(user.getPassword())
-                .authorities(
-                        List.of(
-                                new SimpleGrantedAuthority(
-                                        "ROLE_" + user.getRole().getRoleName()
-                                )
-                        )
-                )
+                // Add role as authority
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName())))
                 .disabled(user.getStatus() == UserStatus.INACTIVE)
                 .build();
     }

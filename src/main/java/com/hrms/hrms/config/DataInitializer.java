@@ -5,52 +5,49 @@ import com.hrms.hrms.modules.auth.entity.UserStatus;
 import com.hrms.hrms.modules.auth.repository.UserRepository;
 import com.hrms.hrms.modules.role.entity.Role;
 import com.hrms.hrms.modules.role.repository.RoleRepository;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-// This will create the temporary data (username, password, role)
 @Configuration
 public class DataInitializer {
-
     @Bean
-    CommandLineRunner initializeData(
+    public CommandLineRunner initializeData(
             RoleRepository roleRepository,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder
     ) {
-        return args -> {Role adminRole = roleRepository.findByRoleName("ADMIN").orElseGet(() -> roleRepository.save(Role.builder().roleName("ADMIN").description("System Administrator").build()));
+        return args -> {
 
-            Role employeeRole = roleRepository.findByRoleName("EMPLOYEE").orElseGet(() ->
-                                    roleRepository.save(Role.builder()
-                                            .roleName("EMPLOYEE")
-                                            .description("Company Employee")
+            // CREATE ADMIN ROLE
+            Role adminRole = roleRepository.findByRoleName("ADMIN").orElseGet(() -> roleRepository.save(Role.builder()
+                                            .roleName("ADMIN")
+                                            .description("System Administrator")
                                             .build()));
 
-            if (!userRepository.existsByUsername("admin")) {
+            // CREATE EMPLOYEE ROLE
+            roleRepository
+                    .findByRoleName("EMPLOYEE")
+                    .orElseGet(() -> roleRepository.save(Role.builder()
+                                            .roleName("EMPLOYEE")
+                                            .description("Standard Employee")
+                                            .build()));
 
-                User admin = User.builder()
-                        .username("admin")
-                        .email("admin@hrms.com")
-                        .password(passwordEncoder.encode("admin123"))
+            // CREATE INITIAL ADMIN
+            String adminEmail = "admin@hrms.com";
+            if (!userRepository.existsByEmail(adminEmail)) {
+                User adminUser = User.builder()
+                        .email(adminEmail)
+                        .password(passwordEncoder.encode("Admin@123"))
                         .role(adminRole)
                         .status(UserStatus.ACTIVE)
                         .build();
-                userRepository.save(admin);
-            }
 
-            if (!userRepository.existsByUsername("employee")) {
-
-                User employee = User.builder()
-                        .username("employee")
-                        .email("employee@hrms.com")
-                        .password(passwordEncoder.encode("employee123"))
-                        .role(employeeRole)
-                        .status(UserStatus.ACTIVE)
-                        .build();
-                userRepository.save(employee);
+                userRepository.save(adminUser);
+                System.out.println("Initial ADMIN created successfully");
+            } else {
+                System.out.println("Initial ADMIN already exists");
             }
         };
     }

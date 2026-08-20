@@ -2,11 +2,8 @@ package com.hrms.hrms.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-
-import org.springframework.beans.factory.annotation.Value;
+import io.jsonwebtoken.security.Keys;import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -14,58 +11,132 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
+    // Secret key used to sign and verify JWT tokens
     private final SecretKey secretKey;
+
+    // JWT expiration time in milliseconds
     private final long expiration;
 
-    public JwtTokenProvider(
-            @Value("${app.jwt.secret}") String secret,
-            @Value("${app.jwt.expiration}") long expiration
-    ) {
+    public JwtTokenProvider(@Value("${app.jwt.secret}") String secret, @Value("${app.jwt.expiration}") long expiration) {
 
+        // Convert the secret string into a secure HMAC key
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expiration = expiration;
     }
 
-    // Generate JWT
-    public String generateToken(String username, String role
+    // GENERATE JWT TOKE
+    public String generateToken(
+            String email,
+            String role
     ) {
+
+        // Current date and time
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
+
+        // Calculate token expiry time
+        Date expiryDate = new Date(
+                now.getTime() + expiration
+        );
+
+        // Build and sign JWT token
         return Jwts.builder()
-                .subject(username)
+
+                // Email is the JWT subject
+                .subject(email)
+
+                // Store user role as a claim
                 .claim("role", role)
+
+                // Token creation time
                 .issuedAt(now)
+
+                // Token expiration time
                 .expiration(expiryDate)
+
+                // Sign token using secret key
                 .signWith(secretKey)
+
                 .compact();
     }
 
-    // Extract username(get the username from the token)
-    public String getUsernameFromToken(String token) {
-        return getClaims(token).getSubject();
+
+    // =========================================================
+    // EXTRACT EMAIL FROM TOKEN
+    // =========================================================
+
+    /*
+     * The JWT subject contains the user's email.
+     */
+
+    public String extractEmail(String token) {
+
+        return getClaims(token)
+                .getSubject();
     }
 
-    // Extract role(get role from the token)
+
+    // =========================================================
+    // EXTRACT ROLE FROM TOKEN
+    // =========================================================
+
     public String getRoleFromToken(String token) {
-        return getClaims(token).get("role", String.class);
+
+        return getClaims(token)
+                .get("role", String.class);
     }
 
-    // Validate JWT(it validate the token for employee/admin)
+
+    // =========================================================
+    // VALIDATE JWT TOKEN
+    // =========================================================
+
+    /*
+     * Checks:
+     *
+     * 1. Token signature
+     * 2. Token format
+     * 3. Token expiration
+     */
+
     public boolean validateToken(String token) {
+
         try {
-            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
+
             return true;
+
         } catch (Exception e) {
+
             return false;
         }
     }
 
-    // Extract claims
+
+    // =========================================================
+    // EXTRACT ALL CLAIMS
+    // =========================================================
+
+    /*
+     * Reads the JWT payload and returns all claims.
+     */
+
     private Claims getClaims(String token) {
+
         return Jwts.parser()
+
+                // Verify token signature
                 .verifyWith(secretKey)
+
                 .build()
+
+                // Parse JWT token
                 .parseSignedClaims(token)
+
+                // Return token payload
                 .getPayload();
     }
 }

@@ -1,3 +1,5 @@
+FOLDER STRUCTURE (HRMS BACKEND)
+
 hrms/
 │
 ├── pom.xml
@@ -207,3 +209,542 @@ hrms/
 │               └── hrms/
 │
 └── .gitignore
+
+------------------------------------------------------------------------------------------------------
+Complete Database Relationship
+
+                 ┌─────────────┐
+                 │    ROLES         │
+                 │                  │
+                 │ id               │
+                 │ role_name        │
+                 └──────┬──────┘
+                        │
+                        │ role_id
+                        ▼
+                 ┌─────────────┐
+                 │    USERS         │
+                 │                  │
+                 │ id               │
+                 │ email            │
+                 │ password         │
+                 │ role_id          │
+                 └──────┬──────┘
+                        │
+                        │ user_id
+                        ▼
+                 ┌─────────────┐
+                 │  EMPLOYEES       │
+                 │                  │
+                 │ id               │
+                 │ user_id          │
+                 │ first_name       │
+                 │ last_name        │
+                 │ department       │
+                 └──────┬──────┘
+                        │
+                        │ department_id
+                        ▼
+                 ┌──────────────┐
+                 │ DEPARTMENTS       │
+                 │                   │
+                 │ id                │
+                 │ department        │
+                 └──────────────┘
+
+
+
+
+
+------------------------------------------BACKEND API PATH------------------------------------
+
+Base URL
+http://localhost:8081
+
+API Base Path
+/api/v1
+
+Authentication & User Registration-----------------------
+
+1. Register User
+POST----http://localhost:8081/api/v1/auth/register
+
+REQUEST BODY
+{
+  "firstName": "Sumit",
+  "lastName": "Kumar",
+  "email": "sumit@example.com",
+  "password": "Sumit@123"
+}
+
+2. Login
+POST----http://localhost:8081/api/v1/auth/login
+
+REQUEST BODY
+{
+  "email": "sumit@example.com",
+  "password": "Sumit@123"
+}
+
+JWT Authentication / RBAC-----------------
+
+The JWT is automatically checked for protected endpoints.
+
+Role Management----------------------------
+
+1.Create Role
+POST------http://localhost:8081/api/v1/roles
+
+Request body
+{
+  "roleName": "MANAGER",
+  "description": "Department manager"
+}
+
+2.Get All Roles
+GET-----http://localhost:8081/api/v1/roles
+
+3.Get Role By ID
+GET-----http://localhost:8081/api/v1/roles/{id}
+
+4.Update Role
+PUT----http://localhost:8081/api/v1/roles/{id}
+
+5.Delete Role
+DELETE-----http://localhost:8081/api/v1/roles/{id}
+
+Department Management(admin token required)---------------------------------------------------
+
+1.Create Department
+POST http://localhost:8081/api/v1/departments
+body:
+{
+    "departmentName": "IT",
+    "description": "Information Technology Department"
+}
+
+2.get all
+GET---http://localhost:8081/api/v1/departments
+
+3.get one
+GET---http://localhost:8081/api/v1/departments/{id}
+
+4.update (admin token required)
+PUT---http://localhost:8081/api/v1/departments/{id}
+
+5.delete
+DELETE---http://localhost:8081/api/v1/departments/{id}
+
+-----------------------------------------------------------------------------------------------------------
+
+Complete API Summary
+
+| #  | Module     | Method | Endpoint                 | Access |
+| -- | ---------- | ------ | -------------------------| ------ |
+| 1  | Auth       | POST   | /api/v1/auth/register    | Public |
+| 2  | Auth       | POST   | /api/v1/auth/login       | Public |
+| 3  | Role       | POST   | /api/v1/roles            | ADMIN  |
+| 4  | Role       | GET    | /api/v1/roles            | ADMIN  |
+| 5  | Role       | GET    | /api/v1/roles/{id}       | ADMIN  |
+| 6  | Role       | PUT    | /api/v1/roles/{id}       | ADMIN  |
+| 7  | Role       | DELETE | /api/v1/roles/{id}       | ADMIN  |
+| 8  | Department | POST   | /api/v1/departments      | ADMIN  |
+| 9  | Department | GET    | /api/v1/departments      | ADMIN  |
+| 10 | Department | GET    | /api/v1/departments/{id} | ADMIN  |
+| 11 | Department | PUT    | /api/v1/departments/{id} | ADMIN  |
+| 12 | Department | DELETE | /api/v1/departments/{id} | ADMIN  |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+==================================================================================================================
+
+Yes, this is an important design decision. We should clarify it before moving further.
+
+The key question
+
+When a person registers for the first time:
+
+How does the system decide whether they are an ADMIN or an EMPLOYEE?
+
+Recommended enterprise approach
+
+The user should NOT choose ADMIN during public registration.
+
+Instead:
+
+First system setup
+        ↓
+Create initial ADMIN
+        ↓
+ADMIN logs in
+        ↓
+ADMIN creates/manages EMPLOYEE users
+        ↓
+Employees log in with their assigned accounts
+Recommended HRMS flow
+1. Initial Admin creation
+
+When the application/database is set up for the first time:
+
+Roles
+├── ADMIN
+└── EMPLOYEE
+
+Then create the first admin account:
+
+User
+├── username: admin
+├── email: admin@hrms.com
+├── password: BCrypt hashed
+└── role: ADMIN
+
+This can be created through:
+
+SQL script
+Spring Boot startup seeder
+Database migration
+
+I recommend a Spring Boot Data Seeder for development.
+
+2. Public registration
+
+If you keep a Register page for normal users:
+
+User fills registration form
+        ↓
+Backend receives username/email/password
+        ↓
+Backend automatically assigns EMPLOYEE role
+        ↓
+User is created
+
+The frontend should not send:
+
+{
+  "roleName": "ADMIN"
+}
+
+Because anyone could modify the request and potentially attempt admin registration.
+
+Instead:
+
+{
+  "username": "sumit",
+  "email": "sumit@example.com",
+  "password": "Password@123"
+}
+
+Backend:
+
+Find EMPLOYEE role
+        ↓
+Assign it automatically
+        ↓
+Create user
+3. Better enterprise flow
+
+For your HRMS, I recommend:
+
+                    ┌───────────────┐
+                    │ First Setup   │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    Create ADMIN
+                            │
+                            ▼
+                      ADMIN LOGIN
+                            │
+                            ▼
+              ┌─────────────────────────┐
+              │ Employee Management    │
+              └───────────┬─────────────┘
+                          │
+                          ▼
+                 Create Employee Account
+                          │
+                          ▼
+                      EMPLOYEE
+                          │
+                          ▼
+                    Employee Login
+
+So the Admin controls who becomes an employee.
+
+Your current registration design
+
+Earlier, we were using something like:
+
+{
+  "username": "sumit",
+  "email": "sumit@gmail.com",
+  "password": "Password@123",
+  "roleName": "EMPLOYEE"
+}
+
+This is okay for development/testing, but for production it is better to change it.
+
+Recommended register request
+public class RegisterRequest {
+
+
+    private String username;
+
+
+    private String email;
+
+
+    private String password;
+}
+
+No:
+
+private String roleName;
+
+Then inside AuthService:
+
+Registration Request
+        ↓
+Find "EMPLOYEE" role
+        ↓
+Assign EMPLOYEE automatically
+        ↓
+Save User
+What about creating Admin?
+
+We should not expose this publicly:
+
+POST /api/v1/auth/register-admin
+
+because that would be a security problem.
+
+Instead, create the first Admin internally.
+
+For example:
+
+Application starts
+        ↓
+Check whether ADMIN role exists
+        ↓
+Create ADMIN role if missing
+        ↓
+Check whether initial admin exists
+        ↓
+Create initial admin
+
+Later, if your project requires multiple admins:
+
+Existing ADMIN
+        ↓
+Creates another ADMIN
+        ↓
+New user receives ADMIN role
+
+That endpoint itself will be protected:
+
+POST /api/v1/users/admin
+Role required: ADMIN
+Best approach for your current project
+
+I recommend we use this:
+
+Public/Auth Registration
+POST /api/v1/auth/register
+
+Automatically creates:
+
+Role = EMPLOYEE
+First Admin
+
+Created automatically using a startup seeder:
+
+Username: admin
+Role: ADMIN
+Admin Employee Management
+
+Admin creates/manages employee accounts and profiles.
+
+Final role decision
+┌──────────────────────────┐
+│ Initial System Setup     │
+└────────────┬─────────────┘
+             │
+             ▼
+        ADMIN created
+             │
+             ▼
+      ┌─────────────┐
+      │ Login Page  │
+      └──────┬──────┘
+             │
+      ┌──────┴───────┐
+      │              │
+      ▼              ▼
+    ADMIN         EMPLOYEE
+      │              │
+      ▼              ▼
+Admin Dashboard  Employee Dashboard
+
+My recommendation: before continuing Phase 6 testing, we should update your registration flow so that the backend automatically decides EMPLOYEE, and then create the initial ADMIN through a startup data seeder. This is cleaner and more secure for your HRMS.
+
+ok so first time we declair admin by script and something like that after that when the other users register that admin can give acces of roles like this user is admin or this user is employee
+
+Exactly. That is a good approach for your HRMS.
+
+Final user and role flow
+1. First-time system setup
+
+When the project/database is first deployed:
+
+Database Setup
+      ↓
+Create Roles
+      ├── ADMIN
+      └── EMPLOYEE
+      ↓
+Create First Admin User
+      ↓
+System Ready
+
+For example, a startup script/seeder creates:
+
+Username: admin
+Email: admin@hrms.com
+Role: ADMIN
+Password: BCrypt encrypted
+
+This first admin is created internally, not through public registration.
+
+2. Other users register
+
+A new user registers:
+
+Register
+   ↓
+User account created
+   ↓
+Default role = EMPLOYEE
+
+For example:
+
+User: Sumit
+Role: EMPLOYEE
+
+The user should not be allowed to choose ADMIN from the registration form.
+
+3. Admin manages roles
+
+After login, the Admin can view users and change their roles.
+
+Example:
+
+Admin Dashboard
+      ↓
+User Management
+      ↓
+Select User
+      ↓
+Change Role
+      ↓
+┌──────────────┐
+│ ADMIN             │
+│ EMPLOYEE          │
+└──────────────┘
+      ↓
+Save
+
+So:
+
+User 1 → EMPLOYEE
+User 2 → EMPLOYEE
+User 3 → ADMIN
+
+The role decision is controlled by an existing Admin.
+
+Complete flow
+FIRST APPLICATION RUN
+        │
+        ▼
+  ┌───────────────┐
+  │ Create Roles  │
+  │ ADMIN         │
+  │ EMPLOYEE      │
+  └───────┬───────┘
+          │
+          ▼
+  ┌───────────────────┐
+  │ Create First Admin│
+  └─────────┬─────────┘
+            │
+            ▼
+       ADMIN LOGIN
+            │
+            ▼
+   ┌────────────────────┐
+   │ Manage Users/Roles │
+   └──────────┬─────────┘
+              │
+              ▼
+      Other users register
+              │
+              ▼
+      Default = EMPLOYEE
+              │
+              ▼
+        ADMIN can change
+              │
+        ┌─────┴─────┐
+        ▼           ▼
+     EMPLOYEE      ADMIN
+One important detail
+
+When an Admin changes a user's role:
+
+EMPLOYEE → ADMIN
+
+the user's old JWT token still contains the old role if your JWT stores the role as a claim.
+
+Therefore, after changing a role, the user should:
+
+Role Changed
+     ↓
+Old token should no longer be trusted / expire
+     ↓
+User logs in again
+     ↓
+New JWT generated
+     ↓
+New role is applied
+
+For your current project, the next logical implementation is:
+
+User Management / Admin Role Assignment
+
+Add an Admin-only endpoint like:
+
+PUT /api/v1/users/{userId}/role
+
+Request:
+
+{
+  "roleId": "role-uuid"
+}
+
+Only an ADMIN can call this API.
+
+So yes: first Admin is seeded → normal users register → default Employee → Admin can later promote/demote users by assigning roles.

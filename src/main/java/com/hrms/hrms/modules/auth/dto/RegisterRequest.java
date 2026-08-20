@@ -3,30 +3,40 @@ package com.hrms.hrms.modules.auth.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
 import lombok.Getter;
 import lombok.Setter;
+
+
+// =========================================================
+// REGISTER REQUEST DTO
+// =========================================================
 
 @Getter
 @Setter
 public class RegisterRequest {
 
-    // Username used for login
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50,
-            message = "Username must be between 3 and 50 characters")
-    private String username;
+    // Employee first name
+    @NotBlank(message = "First name is required")
+    private String firstName;
 
-    // Email address of the employee
+
+    // Employee last name
+    @NotBlank(message = "Last name is required")
+    private String lastName;
+
+
+    // Email is used as login identity
     @NotBlank(message = "Email is required")
-    @Email(message = "Please provide a valid email address")
-    @Size(max = 100,
-            message = "Email cannot exceed 100 characters")
+    @Email(message = "Invalid email format")
     private String email;
 
-    // Plain password received from the client.
-    // It will be encrypted using BCrypt before saving.
+
+    // Password
     @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 100,
-            message = "Password must be at least 6 characters")
+    @Size(
+            min = 6,
+            message = "Password must contain at least 6 characters"
+    )
     private String password;
 }

@@ -1,128 +1,504 @@
 package com.hrms.hrms.modules.auth.service;
+
+
+// =========================================================
+// COMMON EXCEPTIONS
+// =========================================================
+
+import com.hrms.hrms.common.exception.DuplicateResourceException;
+import com.hrms.hrms.common.exception.ResourceNotFoundException;
+import com.hrms.hrms.common.exception.BadRequestException;
+
+
+// =========================================================
+// AUTH DTO
+// =========================================================
+
 import com.hrms.hrms.modules.auth.dto.LoginRequest;
 import com.hrms.hrms.modules.auth.dto.LoginResponse;
 import com.hrms.hrms.modules.auth.dto.RegisterRequest;
 import com.hrms.hrms.modules.auth.dto.RegisterResponse;
+
+
+// =========================================================
+// AUTH ENTITY
+// =========================================================
+
 import com.hrms.hrms.modules.auth.entity.User;
 import com.hrms.hrms.modules.auth.entity.UserStatus;
+
+
+// =========================================================
+// AUTH REPOSITORY
+// =========================================================
+
 import com.hrms.hrms.modules.auth.repository.UserRepository;
+
+
+// =========================================================
+// ROLE
+// =========================================================
+
 import com.hrms.hrms.modules.role.entity.Role;
 import com.hrms.hrms.modules.role.repository.RoleRepository;
+
+
+// =========================================================
+// EMPLOYEE
+// =========================================================
+
+import com.hrms.hrms.modules.employee.entity.Employee;
+import com.hrms.hrms.modules.employee.entity.EmployeeStatus;
+import com.hrms.hrms.modules.employee.repository.EmployeeRepository;
+
+
+// =========================================================
+// SECURITY
+// =========================================================
+
 import com.hrms.hrms.security.JwtTokenProvider;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
+
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
+
 
 @Service
 public class AuthService {
 
+
+    // =========================================================
+    // DEPENDENCIES
+    // =========================================================
+
     private final AuthenticationManager authenticationManager;
+
     private final UserRepository userRepository;
+
     private final RoleRepository roleRepository;
+
+    private final EmployeeRepository employeeRepository;
+
     private final JwtTokenProvider jwtTokenProvider;
+
     private final PasswordEncoder passwordEncoder;
 
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
+
     public AuthService(
+
             AuthenticationManager authenticationManager,
+
             UserRepository userRepository,
+
             RoleRepository roleRepository,
+
+            EmployeeRepository employeeRepository,
+
             JwtTokenProvider jwtTokenProvider,
+
             PasswordEncoder passwordEncoder
     ) {
-        this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.passwordEncoder = passwordEncoder;
+
+        this.authenticationManager =
+                authenticationManager;
+
+        this.userRepository =
+                userRepository;
+
+        this.roleRepository =
+                roleRepository;
+
+        this.employeeRepository =
+                employeeRepository;
+
+        this.jwtTokenProvider =
+                jwtTokenProvider;
+
+        this.passwordEncoder =
+                passwordEncoder;
     }
 
+
+    // =========================================================
     // USER REGISTRATION
-        // Creates a new Employee account.
-        // Public registration is only for EMPLOYEE role.
-    // Admin accounts should not be created through this API.
+    // =========================================================
+
+    /*
+     * PUBLIC SIGNUP FLOW
+     *
+     * Frontend sends:
+     *
+     * First Name
+     * Last Name
+     * Email
+     * Password
+     *
+     *
+     * Backend performs:
+     *
+     * 1. Check email
+     * 2. Get EMPLOYEE role
+     * 3. Create User
+     * 4. Encrypt password
+     * 5. Save User
+     * 6. Create Employee profile
+     * 7. Link Employee → User
+     * 8. Save Employee
+     */
 
     @Transactional
-    public RegisterResponse register(RegisterRequest request) {
+    public RegisterResponse register(
+            RegisterRequest request
+    ) {
 
-        // Step 1: Check whether username already exists
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+
+        // =====================================================
+        // STEP 1: CHECK EMAIL
+        // =====================================================
+
+        if (userRepository.existsByEmail(
+                request.getEmail()
+        )) {
+
+            throw new DuplicateResourceException(
+
+                    "Email already exists: "
+                            + request.getEmail()
+            );
         }
 
-        // Step 2: Check whether email already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
-        }
 
-        // Step 3: Find EMPLOYEE role
-        Role employeeRole = roleRepository.findByRoleName("EMPLOYEE")
-                        .orElseThrow(() -> new RuntimeException("EMPLOYEE role not found"));
+        // =====================================================
+        // STEP 2: GET DEFAULT EMPLOYEE ROLE
+        // =====================================================
 
-        // Step 4: Create User entity
+        /*
+         * Public registration can only create EMPLOYEE users.
+         *
+         * ADMIN users cannot be created through
+         * the public register API.
+         */
+
+        Role employeeRole = roleRepository
+
+                .findByRoleName("EMPLOYEE")
+
+                .orElseThrow(() ->
+
+                        new ResourceNotFoundException(
+
+                                "Default EMPLOYEE role not found"
+                        )
+                );
+
+
+        // =====================================================
+        // STEP 3: CREATE USER ACCOUNT
+        // =====================================================
+
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
 
-                // NEVER save plain password.
-                // BCrypt converts it into a secure hash.
-                .password(passwordEncoder.encode(request.getPassword()))
+                // Email is login identity
+                .email(
+                        request.getEmail()
+                )
 
-                // Every public registration becomes EMPLOYEE
-                .role(employeeRole)
+                // Encrypt password before saving
+                .password(
 
-                // New account starts as ACTIVE
-                .status(UserStatus.ACTIVE)
+                        passwordEncoder.encode(
+
+                                request.getPassword()
+                        )
+                )
+
+                // Automatically assign EMPLOYEE role
+                .role(
+                        employeeRole
+                )
+
+                // Account starts as ACTIVE
+                .status(
+                        UserStatus.ACTIVE
+                )
+
                 .build();
 
-        // Step 5: Save user into PostgreSQL
-        User savedUser = userRepository.save(user);
 
-        // Step 6: Return registration response
+        // =====================================================
+        // STEP 4: SAVE USER
+        // =====================================================
+
+        /*
+         * Save User first.
+         *
+         * We need User ID because Employee
+         * will be linked with this User.
+         */
+
+        User savedUser =
+                userRepository.save(user);
+
+
+        // =====================================================
+        // STEP 5: CREATE EMPLOYEE PROFILE
+        // =====================================================
+
+        Employee employee = Employee.builder()
+
+
+                // Link employee with user account
+                .user(
+                        savedUser
+                )
+
+
+                // Name comes from signup form
+                .firstName(
+                        request.getFirstName()
+                )
+
+                .lastName(
+                        request.getLastName()
+                )
+
+
+                /*
+                 * Employee information below
+                 * will be assigned later by Admin.
+                 */
+
+                .employeeCode(
+                        null
+                )
+
+                .department(
+                        null
+                )
+
+                .designation(
+                        null
+                )
+
+                .dateOfJoining(
+                        null
+                )
+
+                .reportingManager(
+                        null
+                )
+
+
+                // Employee starts active
+                .status(
+                        EmployeeStatus.ACTIVE
+                )
+
+                .build();
+
+
+        // =====================================================
+        // STEP 6: SAVE EMPLOYEE
+        // =====================================================
+
+        Employee savedEmployee =
+                employeeRepository.save(employee);
+
+
+        // =====================================================
+        // STEP 7: RETURN RESPONSE
+        // =====================================================
+
         return RegisterResponse.builder()
-                .userId(savedUser.getId())
-                .username(savedUser.getUsername())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole().getRoleName())
-                .status(savedUser.getStatus().name())
-                .message("Employee registered successfully")
+
+                // User account UUID
+                .userId(
+                        savedUser.getId()
+                )
+
+
+                // Employee profile UUID
+                .employeeId(
+                        savedEmployee.getId()
+                )
+
+
+                // Employee information
+                .firstName(
+                        savedEmployee.getFirstName()
+                )
+
+                .lastName(
+                        savedEmployee.getLastName()
+                )
+
+
+                // Login email
+                .email(
+                        savedUser.getEmail()
+                )
+
+
+                // Assigned role
+                .role(
+
+                        savedUser.getRole()
+                                .getRoleName()
+                )
+
+
+                // Account status
+                .status(
+
+                        savedUser.getStatus()
+                                .name()
+                )
+
+
+                // Success message
+                .message(
+
+                        "Employee registered successfully"
+                )
+
                 .build();
     }
 
 
+    // =========================================================
     // USER LOGIN
-    public LoginResponse login(LoginRequest request) {
+    // =========================================================
 
-        // Authenticate username and password.
-        // Spring Security checks the BCrypt password.
+    @Transactional
+    public LoginResponse login(
+            LoginRequest request
+    ) {
+
+
+        // =====================================================
+        // STEP 1: AUTHENTICATE EMAIL AND PASSWORD
+        // =====================================================
+
         authenticationManager.authenticate(
+
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
+
+                        request.getEmail(),
+
                         request.getPassword()
                 )
         );
 
-        // Find the authenticated user from database
-        User user = userRepository
-                .findByUsername(request.getUsername())
-                .orElseThrow();
 
-        // Update last login timestamp
-        user.setLastLogin(LocalDateTime.now());
+        // =====================================================
+        // STEP 2: GET USER FROM DATABASE
+        // =====================================================
+
+        User user = userRepository
+
+                .findByEmail(
+                        request.getEmail()
+                )
+
+                .orElseThrow(() ->
+
+                        new ResourceNotFoundException(
+
+                                "User not found"
+                        )
+                );
+
+
+        // =====================================================
+        // STEP 3: CHECK ACCOUNT STATUS
+        // =====================================================
+
+        /*
+         * Inactive users cannot login.
+         */
+
+        if (user.getStatus()
+                == UserStatus.INACTIVE) {
+
+            throw new BadRequestException(
+
+                    "Your account is inactive. "
+                            + "Please contact the administrator."
+            );
+        }
+
+
+        // =====================================================
+        // STEP 4: UPDATE LAST LOGIN
+        // =====================================================
+
+        user.setLastLogin(
+                LocalDateTime.now()
+        );
+
         userRepository.save(user);
 
-        // Generate JWT containing username and role
-        String token = jwtTokenProvider.generateToken(user.getUsername(), user.getRole().getRoleName());
 
-        // Return JWT and user information
+        // =====================================================
+        // STEP 5: GENERATE JWT
+        // =====================================================
+
+        /*
+         * JWT contains:
+         *
+         * Subject → Email
+         * Claim   → Role
+         */
+
+        String token =
+                jwtTokenProvider.generateToken(
+
+                        user.getEmail(),
+
+                        user.getRole()
+                                .getRoleName()
+                );
+
+
+        // =====================================================
+        // STEP 6: RETURN LOGIN RESPONSE
+        // =====================================================
+
         return LoginResponse.builder()
-                .token(token)
-                .tokenType("Bearer")
-                .userId(user.getId())
-                .username(user.getUsername())
-                .role(user.getRole().getRoleName())
+
+                .token(
+                        token
+                )
+
+                .tokenType(
+                        "Bearer"
+                )
+
+                .userId(
+                        user.getId()
+                )
+
+                .email(
+                        user.getEmail()
+                )
+
+                .role(
+
+                        user.getRole()
+                                .getRoleName()
+                )
+
                 .build();
     }
 }
