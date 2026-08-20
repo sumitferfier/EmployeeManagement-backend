@@ -60,7 +60,9 @@ public class Employee {
     // =====================================================
 
     /*
-     * Employee code will be assigned by Admin later.
+     * Employee code is assigned later by Admin.
+     *
+     * During signup it can be NULL.
      */
 
     @Column(
@@ -70,7 +72,10 @@ public class Employee {
     private String employeeCode;
 
 
-    // First name comes from signup
+    /*
+     * First name comes from signup.
+     */
+
     @Column(
             name = "first_name",
             nullable = false
@@ -78,7 +83,10 @@ public class Employee {
     private String firstName;
 
 
-    // Last name comes from signup
+    /*
+     * Last name comes from signup.
+     */
+
     @Column(
             name = "last_name",
             nullable = false
@@ -86,7 +94,11 @@ public class Employee {
     private String lastName;
 
 
-    // Optional contact number
+    /*
+     * Phone can be updated later.
+     */
+
+    @Column(name = "phone")
     private String phone;
 
 
@@ -95,7 +107,9 @@ public class Employee {
     // =====================================================
 
     /*
-     * Department is assigned by Admin.
+     * Department is assigned later by Admin.
+     *
+     * During signup it can be NULL.
      */
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -108,14 +122,19 @@ public class Employee {
     // =====================================================
 
     /*
-     * Designation is assigned by Admin.
+     * Designation is assigned later by Admin.
+     *
+     * During signup it can be NULL.
      */
 
+    @Column(name = "designation")
     private String designation;
 
 
     /*
-     * Joining date is assigned by Admin.
+     * Date of joining is assigned later by Admin.
+     *
+     * During signup it can be NULL.
      */
 
     @Column(name = "date_of_joining")
@@ -132,6 +151,8 @@ public class Employee {
      * Employee
      *    ↓
      * Reporting Manager
+     *
+     * During signup it can be NULL.
      */
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -142,6 +163,10 @@ public class Employee {
     // =====================================================
     // EMPLOYMENT STATUS
     // =====================================================
+
+    /*
+     * New employees are ACTIVE by default.
+     */
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

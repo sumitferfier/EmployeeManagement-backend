@@ -298,7 +298,7 @@ POST------http://localhost:8081/api/v1/roles
 Request body
 {
   "roleName": "MANAGER",
-  "description": "Department manager"
+  "description": "Manages employees"
 }
 
 2.Get All Roles
@@ -310,6 +310,12 @@ GET-----http://localhost:8081/api/v1/roles/{id}
 4.Update Role
 PUT----http://localhost:8081/api/v1/roles/{id}
 
+Request Body
+{
+  "roleName": "MANAGER",
+  "description": "Updated description"
+}
+
 5.Delete Role
 DELETE-----http://localhost:8081/api/v1/roles/{id}
 
@@ -319,8 +325,8 @@ Department Management(admin token required)-------------------------------------
 POST http://localhost:8081/api/v1/departments
 body:
 {
-    "departmentName": "IT",
-    "description": "Information Technology Department"
+  "departmentName": "IT",
+  "description": "Information Technology Department"
 }
 
 2.get all
@@ -332,9 +338,41 @@ GET---http://localhost:8081/api/v1/departments/{id}
 4.update (admin token required)
 PUT---http://localhost:8081/api/v1/departments/{id}
 
+Request Body
+{
+  "departmentName": "HR",
+  "description": "Human Resources Department"
+}
+
 5.delete
 DELETE---http://localhost:8081/api/v1/departments/{id}
 
+Employee Management-------------------------------------------------
+
+1.Create Employee
+POST---http://localhost:8081/api/v1/employees
+
+Request Body
+{
+  "userId": "a12b34c5-d678-90ef-1234-567890abcdef",
+  "employeeCode": "EMP001",
+  "firstName": "Sumit",
+  "lastName": "Kumar",
+  "phone": "9876543210",
+  "departmentId": "department-uuid",
+  "designation": "Software Developer",
+  "dateOfJoining": "2026-08-19",
+  "reportingManagerId": null,
+  "status": "ACTIVE"
+}
+
+2.get all
+GET----http://localhost:8081/api/v1/employees
+
+3.get one
+GET----http://localhost:8081/api/v1/employees
+
+4.
 -----------------------------------------------------------------------------------------------------------
 
 Complete API Summary
