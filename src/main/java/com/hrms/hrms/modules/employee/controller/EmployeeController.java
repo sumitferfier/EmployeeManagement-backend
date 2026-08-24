@@ -3,6 +3,7 @@ package com.hrms.hrms.modules.employee.controller;
 import com.hrms.hrms.modules.employee.dto.EmployeeRequest;
 import com.hrms.hrms.modules.employee.dto.EmployeeResponse;
 import com.hrms.hrms.modules.employee.service.EmployeeService;
+import org.springframework.security.core.Authentication;
 
 import jakarta.validation.Valid;
 
@@ -11,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
-
 
 /*REST Controller for Employee Management.
  * Base URL: /api/v1/employees
@@ -37,6 +37,19 @@ public class EmployeeController {
     public ResponseEntity<List<EmployeeResponse>>
     getAllEmployees() {
         return ResponseEntity.ok(employeeService.getAllEmployees());
+    }
+
+    // GET LOGGED-IN EMPLOYEE PROFILE
+    @GetMapping("/me")
+    public ResponseEntity<EmployeeResponse> getMyProfile(
+            Authentication authentication
+    ) {
+
+        String email = authentication.getName();
+
+        return ResponseEntity.ok(
+                employeeService.getMyProfile(email)
+        );
     }
 
     // GET EMPLOYEE BY UUID

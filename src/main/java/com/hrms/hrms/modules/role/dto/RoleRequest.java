@@ -9,7 +9,7 @@ import lombok.Setter;
 public class RoleRequest {
 
     // ROLE NAME
-    // Example: ADMIN, EMPLOYEE,MANAGER
+    // Example: ADMIN, EMPLOYEE, MANAGER
     @NotBlank(message = "Role name is required")
     @Size(max = 30, message = "Role name cannot exceed 30 characters")
     private String roleName;

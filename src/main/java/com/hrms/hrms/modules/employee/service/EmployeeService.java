@@ -62,10 +62,7 @@ public class EmployeeService {
             EmployeeRequest request
     ) {
 
-        // =====================================================
-        // STEP 1: CHECK EMPLOYEE CODE
-        // =====================================================
-
+        // Check whether employee code already exists.
         if (employeeRepository.existsByEmployeeCode(
                 request.getEmployeeCode()
         )) {
@@ -77,10 +74,7 @@ public class EmployeeService {
         }
 
 
-        // =====================================================
-        // STEP 2: FIND USER
-        // =====================================================
-
+        // Find the User account.
         User user = userRepository
                 .findById(request.getUserId())
                 .orElseThrow(() ->
@@ -91,10 +85,7 @@ public class EmployeeService {
                 );
 
 
-        // =====================================================
-        // STEP 3: CHECK WHETHER USER ALREADY HAS EMPLOYEE
-        // =====================================================
-
+        // One User can have only one Employee profile.
         if (employeeRepository.existsByUserId(
                 request.getUserId()
         )) {
@@ -106,10 +97,7 @@ public class EmployeeService {
         }
 
 
-        // =====================================================
-        // STEP 4: FIND DEPARTMENT
-        // =====================================================
-
+        // Find Department.
         Department department = departmentRepository
                 .findById(request.getDepartmentId())
                 .orElseThrow(() ->
@@ -120,10 +108,7 @@ public class EmployeeService {
                 );
 
 
-        // =====================================================
-        // STEP 5: FIND REPORTING MANAGER
-        // =====================================================
-
+        // Find reporting manager if provided.
         Employee reportingManager = null;
 
         if (request.getReportingManagerId() != null) {
@@ -139,25 +124,17 @@ public class EmployeeService {
         }
 
 
-        // =====================================================
-        // STEP 6: DETERMINE EMPLOYEE STATUS
-        // =====================================================
-
+        // Convert request status to EmployeeStatus enum.
         EmployeeStatus status = parseEmployeeStatus(
                 request.getStatus()
         );
 
 
-        // =====================================================
-        // STEP 7: CREATE EMPLOYEE ENTITY
-        // =====================================================
-
+        // Create Employee entity.
         Employee employee = Employee.builder()
 
-                // Linked User account
                 .user(user)
 
-                // Employee information
                 .employeeCode(
                         request.getEmployeeCode().trim()
                 )
@@ -174,10 +151,8 @@ public class EmployeeService {
                         request.getPhone()
                 )
 
-                // Department
                 .department(department)
 
-                // Job information
                 .designation(
                         request.getDesignation().trim()
                 )
@@ -186,31 +161,21 @@ public class EmployeeService {
                         request.getDateOfJoining()
                 )
 
-                // Reporting manager
                 .reportingManager(
                         reportingManager
                 )
 
-                // Employment status
-                .status(
-                        status
-                )
+                .status(status)
 
                 .build();
 
 
-        // =====================================================
-        // STEP 8: SAVE EMPLOYEE
-        // =====================================================
-
+        // Save Employee.
         Employee savedEmployee =
                 employeeRepository.save(employee);
 
 
-        // =====================================================
-        // STEP 9: RETURN RESPONSE
-        // =====================================================
-
+        // Return response.
         return mapToResponse(savedEmployee);
     }
 
@@ -252,6 +217,40 @@ public class EmployeeService {
 
 
     // =========================================================
+    // GET LOGGED-IN EMPLOYEE PROFILE
+    // =========================================================
+
+    @Transactional(readOnly = true)
+    public EmployeeResponse getMyProfile(
+            String email
+    ) {
+
+        /*
+         * Email comes from JWT token.
+         *
+         * JWT
+         *   ↓
+         * Email
+         *   ↓
+         * Find User
+         *   ↓
+         * Find Employee profile
+         */
+
+        Employee employee = employeeRepository
+                .findByUserEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee profile not found for email: "
+                                        + email
+                        )
+                );
+
+        return mapToResponse(employee);
+    }
+
+
+    // =========================================================
     // UPDATE EMPLOYEE
     // =========================================================
 
@@ -261,10 +260,7 @@ public class EmployeeService {
             EmployeeRequest request
     ) {
 
-        // =====================================================
-        // STEP 1: FIND EXISTING EMPLOYEE
-        // =====================================================
-
+        // Find existing employee.
         Employee employee = employeeRepository
                 .findById(id)
                 .orElseThrow(() ->
@@ -274,17 +270,13 @@ public class EmployeeService {
                 );
 
 
-        // =====================================================
-        // STEP 2: CHECK EMPLOYEE CODE
-        // =====================================================
-
+        // Check employee code duplication.
         employeeRepository
                 .findByEmployeeCode(
                         request.getEmployeeCode()
                 )
                 .ifPresent(existingEmployee -> {
 
-                    // Allow the same employee to keep their code.
                     if (!existingEmployee.getId().equals(id)) {
 
                         throw new DuplicateResourceException(
@@ -295,10 +287,7 @@ public class EmployeeService {
                 });
 
 
-        // =====================================================
-        // STEP 3: FIND USER
-        // =====================================================
-
+        // Find User.
         User user = userRepository
                 .findById(request.getUserId())
                 .orElseThrow(() ->
@@ -309,17 +298,11 @@ public class EmployeeService {
                 );
 
 
-        // =====================================================
-        // STEP 4: PREVENT USER FROM BELONGING TO
-        // ANOTHER EMPLOYEE
-        // =====================================================
-
+        // Prevent User from being linked to another Employee.
         employeeRepository
                 .findByUserId(request.getUserId())
                 .ifPresent(existingEmployee -> {
 
-                    // If the User belongs to a different Employee,
-                    // the update is not allowed.
                     if (!existingEmployee.getId().equals(id)) {
 
                         throw new DuplicateResourceException(
@@ -329,10 +312,7 @@ public class EmployeeService {
                 });
 
 
-        // =====================================================
-        // STEP 5: FIND DEPARTMENT
-        // =====================================================
-
+        // Find Department.
         Department department = departmentRepository
                 .findById(request.getDepartmentId())
                 .orElseThrow(() ->
@@ -343,15 +323,12 @@ public class EmployeeService {
                 );
 
 
-        // =====================================================
-        // STEP 6: FIND REPORTING MANAGER
-        // =====================================================
-
+        // Find reporting manager.
         Employee reportingManager = null;
 
         if (request.getReportingManagerId() != null) {
 
-            // Employee cannot report to themselves.
+            // Employee cannot be their own manager.
             if (request.getReportingManagerId().equals(id)) {
 
                 throw new BadRequestException(
@@ -373,10 +350,7 @@ public class EmployeeService {
         }
 
 
-        // =====================================================
-        // STEP 7: UPDATE EMPLOYEE INFORMATION
-        // =====================================================
-
+        // Update Employee fields.
         employee.setUser(user);
 
         employee.setEmployeeCode(
@@ -412,10 +386,7 @@ public class EmployeeService {
         );
 
 
-        // =====================================================
-        // STEP 8: UPDATE STATUS
-        // =====================================================
-
+        // Update status.
         employee.setStatus(
                 parseEmployeeStatus(
                         request.getStatus()
@@ -423,13 +394,9 @@ public class EmployeeService {
         );
 
 
-        // =====================================================
-        // STEP 9: SAVE UPDATED EMPLOYEE
-        // =====================================================
-
+        // Save updated Employee.
         Employee updatedEmployee =
                 employeeRepository.save(employee);
-
 
         return mapToResponse(updatedEmployee);
     }
@@ -444,7 +411,6 @@ public class EmployeeService {
             UUID id
     ) {
 
-        // Find employee first.
         Employee employee = employeeRepository
                 .findById(id)
                 .orElseThrow(() ->
@@ -454,7 +420,7 @@ public class EmployeeService {
                 );
 
 
-        // Delete employee profile.
+        // Delete Employee profile.
         employeeRepository.delete(employee);
     }
 
@@ -462,11 +428,6 @@ public class EmployeeService {
     // =========================================================
     // PARSE EMPLOYEE STATUS
     // =========================================================
-
-    /*
-     * Converts String status from the request
-     * into EmployeeStatus enum.
-     */
 
     private EmployeeStatus parseEmployeeStatus(
             String status
@@ -505,6 +466,9 @@ public class EmployeeService {
         String reportingManagerName = null;
         UUID reportingManagerId = null;
 
+        UUID departmentId = null;
+        String departmentName = null;
+
 
         // =====================================================
         // REPORTING MANAGER DETAILS
@@ -523,18 +487,35 @@ public class EmployeeService {
 
 
         // =====================================================
+        // DEPARTMENT DETAILS
+        // =====================================================
+
+        /*
+         * Department can be null for a newly registered employee
+         * before an Admin assigns them to a department.
+         */
+
+        if (employee.getDepartment() != null) {
+
+            departmentId =
+                    employee.getDepartment().getId();
+
+            departmentName =
+                    employee.getDepartment()
+                            .getDepartmentName();
+        }
+
+
+        // =====================================================
         // RETURN RESPONSE
         // =====================================================
 
         return EmployeeResponse.builder()
 
-                // Employee
                 .id(
                         employee.getId()
                 )
 
-
-                // User account
                 .userId(
                         employee.getUser().getId()
                 )
@@ -543,8 +524,6 @@ public class EmployeeService {
                         employee.getUser().getEmail()
                 )
 
-
-                // Employee details
                 .employeeCode(
                         employee.getEmployeeCode()
                 )
@@ -561,19 +540,14 @@ public class EmployeeService {
                         employee.getPhone()
                 )
 
-
-                // Department
                 .departmentId(
-                        employee.getDepartment().getId()
+                        departmentId
                 )
 
                 .departmentName(
-                        employee.getDepartment()
-                                .getDepartmentName()
+                        departmentName
                 )
 
-
-                // Job information
                 .designation(
                         employee.getDesignation()
                 )
@@ -582,8 +556,6 @@ public class EmployeeService {
                         employee.getDateOfJoining()
                 )
 
-
-                // Reporting manager
                 .reportingManagerId(
                         reportingManagerId
                 )
@@ -592,8 +564,6 @@ public class EmployeeService {
                         reportingManagerName
                 )
 
-
-                // Employee status
                 .status(
                         employee.getStatus()
                 )

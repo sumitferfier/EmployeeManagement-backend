@@ -26,7 +26,6 @@ public class AuthController {
     // Public endpoint.
     // Creates an EMPLOYEE account.
     // No JWT is required for registration.
-
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(
             @Valid @RequestBody RegisterRequest request

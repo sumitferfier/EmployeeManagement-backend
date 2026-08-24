@@ -18,17 +18,10 @@ public class RoleService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
 
-
-    // CONSTRUCTOR
-    public RoleService(
-            RoleRepository roleRepository,
-            UserRepository userRepository
-    ) {
-
+    public RoleService(RoleRepository roleRepository, UserRepository userRepository) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
     }
-
 
     // CREATE ROLE
     @Transactional
@@ -64,7 +57,6 @@ public class RoleService {
         return roles.stream().map(this::mapToResponse).toList();
     }
 
-
     // GET ROLE BY ID
     public RoleResponse getRoleById(UUID id) {
 
@@ -93,7 +85,6 @@ public class RoleService {
 
         if (existingRoleName.equalsIgnoreCase("ADMIN")
                 || existingRoleName.equalsIgnoreCase("EMPLOYEE")) {
-
             throw new BadRequestException("System role cannot be modified: " + existingRoleName);
         }
 
@@ -134,13 +125,11 @@ public class RoleService {
 
         if (roleName.equalsIgnoreCase("ADMIN")
                 || roleName.equalsIgnoreCase("EMPLOYEE")) {
-
             throw new BadRequestException("System role cannot be deleted: " + roleName);
         }
 
         // CHECK WHETHER ROLE IS CURRENTLY IN USE
         boolean roleInUse = userRepository.existsByRoleId(id);
-
         if (roleInUse) {
             throw new BadRequestException("Role cannot be deleted because it is assigned to users");
         }

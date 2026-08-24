@@ -619,7 +619,7 @@ Admin creates/manages employee accounts and profiles.
 
 Final role decision
 ┌──────────────────────────┐
-│ Initial System Setup     │
+│ Initial System Setup               │
 └────────────┬─────────────┘
              │
              ▼
@@ -627,15 +627,15 @@ Final role decision
              │
              ▼
       ┌─────────────┐
-      │ Login Page  │
+      │ Login Page       │
       └──────┬──────┘
-             │
+                │
       ┌──────┴───────┐
-      │              │
-      ▼              ▼
-    ADMIN         EMPLOYEE
-      │              │
-      ▼              ▼
+      │                   │
+      ▼                  ▼
+    ADMIN             EMPLOYEE
+      │                  │
+      ▼                  ▼
 Admin Dashboard  Employee Dashboard
 
 My recommendation: before continuing Phase 6 testing, we should update your registration flow so that the backend automatically decides EMPLOYEE, and then create the initial ADMIN through a startup data seeder. This is cleaner and more secure for your HRMS.

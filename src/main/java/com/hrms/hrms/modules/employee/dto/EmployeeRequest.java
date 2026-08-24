@@ -5,10 +5,8 @@ import lombok.*;
 import java.time.LocalDate;
 import java.util.UUID;
 
-
 /*Request DTO used when creating or updating an employee.
  * We don't directly accept the Employee entity from the frontend.*/
-
 @Getter
 @Setter
 @NoArgsConstructor
