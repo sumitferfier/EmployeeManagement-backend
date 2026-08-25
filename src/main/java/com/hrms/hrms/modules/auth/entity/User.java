@@ -1,8 +1,8 @@
 package com.hrms.hrms.modules.auth.entity;
 
-import com.hrms.hrms.modules.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,47 +15,88 @@ import java.util.UUID;
 @Builder
 public class User {
 
-    // Primary key
+    // =========================================================
+    // PRIMARY KEY
+    // =========================================================
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Email is now the unique login identity
+
+    // =========================================================
+    // LOGIN EMAIL
+    // =========================================================
+
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    // BCrypt hashed password
+
+    // =========================================================
+    // PASSWORD
+    // =========================================================
+
     @Column(nullable = false, length = 255)
     private String password;
 
-    // User role: isAdmin or isEmployee
-    @Column(nullable = false)
+
+    // =========================================================
+    // ACCESS PERMISSIONS
+    // =========================================================
+
+    /*
+     * true  -> User can access Admin features
+     * false -> User cannot access Admin features
+     */
+    @Column(name = "is_admin", nullable = false)
     private boolean isAdmin;
 
-    @Column(nullable = false)
+
+    /*
+     * true  -> User can access Employee features
+     * false -> User cannot access Employee features
+     */
+    @Column(name = "is_employee", nullable = false)
     private boolean isEmployee;
 
-    // Account status
+
+    // =========================================================
+    // ACCOUNT STATUS
+    // =========================================================
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status;
 
-    // Last successful login time
+
+    // =========================================================
+    // LAST LOGIN
+    // =========================================================
+
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    // Record creation timestamp
+
+    // =========================================================
+    // AUDIT FIELDS
+    // =========================================================
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    // Record update timestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Automatically executed before INSERT
+
+    // =========================================================
+    // BEFORE INSERT
+    // =========================================================
+
     @PrePersist
     protected void onCreate() {
+
         LocalDateTime now = LocalDateTime.now();
+
         createdAt = now;
         updatedAt = now;
 
@@ -65,9 +106,14 @@ public class User {
         }
     }
 
-    // Automatically executed before UPDATE
+
+    // =========================================================
+    // BEFORE UPDATE
+    // =========================================================
+
     @PreUpdate
     protected void onUpdate() {
+
         updatedAt = LocalDateTime.now();
     }
 }
