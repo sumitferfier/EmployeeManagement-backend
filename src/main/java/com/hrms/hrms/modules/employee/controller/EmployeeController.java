@@ -40,17 +40,17 @@ public class EmployeeController {
     }
 
     // GET LOGGED-IN EMPLOYEE PROFILE
-    @GetMapping("/me")
-    public ResponseEntity<EmployeeResponse> getMyProfile(
-            Authentication authentication
-    ) {
-
-        String email = authentication.getName();
-
-        return ResponseEntity.ok(
-                employeeService.getMyProfile(email)
-        );
-    }
+//    @GetMapping("/me")
+//    public ResponseEntity<EmployeeResponse> getMyProfile(
+//            Authentication authentication
+//    ) {
+//
+//        String email = authentication.getName();
+//
+//        return ResponseEntity.ok(
+//                employeeService.getMyProfile(email)
+//        );
+//    }
 
     // GET EMPLOYEE BY UUID
     @GetMapping("/{id}")

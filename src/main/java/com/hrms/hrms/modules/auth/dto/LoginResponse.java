@@ -7,10 +7,10 @@ import java.util.UUID;
 @Getter
 @Builder
 public class LoginResponse {
-
     private String token;
     private String tokenType;
     private UUID userId;
     private String email;
-    private String role;
+    private boolean isAdmin;
+    private boolean isEmployee;
 }

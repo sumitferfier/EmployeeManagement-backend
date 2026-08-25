@@ -1,149 +1,250 @@
 package com.hrms.hrms.modules.role.service;
 
-import com.hrms.hrms.common.exception.BadRequestException;
 import com.hrms.hrms.common.exception.DuplicateResourceException;
 import com.hrms.hrms.common.exception.ResourceNotFoundException;
-import com.hrms.hrms.modules.auth.repository.UserRepository;
+
 import com.hrms.hrms.modules.role.dto.RoleRequest;
 import com.hrms.hrms.modules.role.dto.RoleResponse;
+
 import com.hrms.hrms.modules.role.entity.Role;
 import com.hrms.hrms.modules.role.repository.RoleRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.UUID;
 
+
 @Service
 public class RoleService {
-    private final RoleRepository roleRepository;
-    private final UserRepository userRepository;
 
-    public RoleService(RoleRepository roleRepository, UserRepository userRepository) {
+    // =========================================================
+    // DEPENDENCY
+    // =========================================================
+
+    private final RoleRepository roleRepository;
+
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
+
+    public RoleService(
+            RoleRepository roleRepository
+    ) {
         this.roleRepository = roleRepository;
-        this.userRepository = userRepository;
     }
 
+
+    // =========================================================
     // CREATE ROLE
+    // =========================================================
+
     @Transactional
-    public RoleResponse createRole(RoleRequest request) {
+    public RoleResponse createRole(
+            RoleRequest request
+    ) {
+
         // Convert role name to uppercase.
-        // This prevents situations like:admin, Admin, ADMIN
-        // being treated as different roles.
-        String roleName = request.getRoleName().trim().toUpperCase();
+        String roleName = request
+                .getRoleName()
+                .trim()
+                .toUpperCase();
+
 
         // Check whether role already exists.
         if (roleRepository.existsByRoleName(roleName)) {
-            throw new DuplicateResourceException("Role already exists: " + roleName);
+
+            throw new DuplicateResourceException(
+                    "Role already exists: " + roleName
+            );
         }
 
+
         // Create Role entity.
-        Role role = Role.builder().roleName(roleName).description(request.getDescription()).build();
+        Role role = Role.builder()
 
-        // Save role to PostgreSQL.
-        Role savedRole = roleRepository.save(role);
+                .roleName(roleName)
 
-        // Convert entity to response DTO.
+                .description(
+                        request.getDescription()
+                )
+
+                .build();
+
+
+        // Save role.
+        Role savedRole =
+                roleRepository.save(role);
+
+
+        // Return response.
         return mapToResponse(savedRole);
     }
 
 
+    // =========================================================
     // GET ALL ROLES
+    // =========================================================
+
+    @Transactional(readOnly = true)
     public List<RoleResponse> getAllRoles() {
 
-        // Get all roles from PostgreSQL.
-        List<Role> roles = roleRepository.findAll();
+        return roleRepository
 
-        // Convert each Role entity to RoleResponse.
-        return roles.stream().map(this::mapToResponse).toList();
+                .findAll()
+
+                .stream()
+
+                .map(this::mapToResponse)
+
+                .toList();
     }
 
+
+    // =========================================================
     // GET ROLE BY ID
-    public RoleResponse getRoleById(UUID id) {
+    // =========================================================
 
-        // Find role by primary key.
-        Role role = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + id));
+    @Transactional(readOnly = true)
+    public RoleResponse getRoleById(
+            UUID id
+    ) {
 
-        // Return DTO instead of directly returning entity.
+        Role role = roleRepository
+
+                .findById(id)
+
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Role not found with ID: " + id
+                        )
+                );
+
+
         return mapToResponse(role);
     }
 
+
+    // =========================================================
     // UPDATE ROLE
+    // =========================================================
+
     @Transactional
     public RoleResponse updateRole(
+
             UUID id,
+
             RoleRequest request
     ) {
-        // Find the role by ID.
-        // If the role doesn't exist,
-        // ResourceNotFoundException will be thrown.
-        Role role = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + id));
 
-        // PROTECT SYSTEM ROLES
-        // ADMIN and EMPLOYEE are mandatory system roles.
-        // They should not be renamed or modified.
-        String existingRoleName = role.getRoleName();
+        // Find existing role.
+        Role role = roleRepository
 
-        if (existingRoleName.equalsIgnoreCase("ADMIN")
-                || existingRoleName.equalsIgnoreCase("EMPLOYEE")) {
-            throw new BadRequestException("System role cannot be modified: " + existingRoleName);
-        }
+                .findById(id)
 
-        // PREPARE NEW ROLE NAME
-        String roleName = request.getRoleName().trim().toUpperCase();
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Role not found with ID: " + id
+                        )
+                );
 
-        // CHECK DUPLICATE ROLE NAME
-        roleRepository.findByRoleName(roleName)
+
+        // Prepare new role name.
+        String roleName = request
+
+                .getRoleName()
+
+                .trim()
+
+                .toUpperCase();
+
+
+        // Check duplicate role name.
+        roleRepository
+
+                .findByRoleName(roleName)
+
                 .ifPresent(existingRole -> {
 
-                    // If another role already has this name,
-                    // don't allow the update.
+                    // Another role cannot have the same name.
                     if (!existingRole.getId().equals(id)) {
-                        throw new DuplicateResourceException("Role already exists: " + roleName);
+
+                        throw new DuplicateResourceException(
+                                "Role already exists: " + roleName
+                        );
                     }
                 });
 
-        // UPDATE ROLE
+
+        // Update role.
         role.setRoleName(roleName);
-        role.setDescription(request.getDescription());
 
-        // Save changes to PostgreSQL.
-        Role updatedRole = roleRepository.save(role);
+        role.setDescription(
+                request.getDescription()
+        );
 
-        // Convert entity to DTO.
+
+        // Save updated role.
+        Role updatedRole =
+                roleRepository.save(role);
+
+
         return mapToResponse(updatedRole);
     }
 
+
+    // =========================================================
     // DELETE ROLE
+    // =========================================================
+
     @Transactional
-    public void deleteRole(UUID id) {
+    public void deleteRole(
+            UUID id
+    ) {
 
         // Find role.
-        Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("Role not found with ID: " + id));
+        Role role = roleRepository
 
-        // PROTECT SYSTEM ROLES
-        String roleName = role.getRoleName();
+                .findById(id)
 
-        if (roleName.equalsIgnoreCase("ADMIN")
-                || roleName.equalsIgnoreCase("EMPLOYEE")) {
-            throw new BadRequestException("System role cannot be deleted: " + roleName);
-        }
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Role not found with ID: " + id
+                        )
+                );
 
-        // CHECK WHETHER ROLE IS CURRENTLY IN USE
-        boolean roleInUse = userRepository.existsByRoleId(id);
-        if (roleInUse) {
-            throw new BadRequestException("Role cannot be deleted because it is assigned to users");
-        }
 
-        // Delete role.
+        // No user-role relationship exists anymore.
+        // Therefore, the role can be deleted directly.
+
         roleRepository.delete(role);
     }
+
+
+    // =========================================================
     // ENTITY → DTO MAPPER
-    // Converts Role entity into RoleResponse.
-    private RoleResponse mapToResponse(Role role) {
+    // =========================================================
+
+    private RoleResponse mapToResponse(
+            Role role
+    ) {
+
         return RoleResponse.builder()
-                .id(role.getId())
-                .roleName(role.getRoleName())
-                .description(role.getDescription())
+
+                .id(
+                        role.getId()
+                )
+
+                .roleName(
+                        role.getRoleName()
+                )
+
+                .description(
+                        role.getDescription()
+                )
+
                 .build();
     }
 }

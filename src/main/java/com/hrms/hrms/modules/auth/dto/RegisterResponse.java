@@ -9,11 +9,9 @@ import java.util.UUID;
 @Builder
 public class RegisterResponse {
     private UUID userId;
-    private UUID employeeId;
-    private String firstName;
-    private String lastName;
     private String email;
-    private String role;
+    private boolean isAdmin;
+    private boolean isEmployee;
     private String status;
     private String message;
 }

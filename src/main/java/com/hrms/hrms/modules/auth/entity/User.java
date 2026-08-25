@@ -28,10 +28,12 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
-    // User role: ADMIN or EMPLOYEE
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    // User role: isAdmin or isEmployee
+    @Column(nullable = false)
+    private boolean isAdmin;
+
+    @Column(nullable = false)
+    private boolean isEmployee;
 
     // Account status
     @Enumerated(EnumType.STRING)

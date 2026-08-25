@@ -370,9 +370,80 @@ Request Body
 GET----http://localhost:8081/api/v1/employees
 
 3.get one
-GET----http://localhost:8081/api/v1/employees
+GET----http://localhost:8081/api/v1/employees/{employee_id}
 
-4.
+4.Update
+PUT----http://localhost:8081/api/v1/employees/{employee_id}
+
+Request Body
+{
+  "userId": "USER_UUID",
+  "employeeCode": "EMP001",
+  "firstName": "Sumit",
+  "lastName": "Kumar",
+  "phone": "9999999999",
+  "departmentId": "DEPARTMENT_UUID",
+  "designation": "Senior Software Engineer",
+  "dateOfJoining": "2026-08-24",
+  "reportingManagerId": null,
+  "status": "ACTIVE"
+}
+
+5. Delete 
+DELETE------http://localhost8081/api/v1/employees/{employee_id}
+
+Admin User Access Management API---------------------------------------------
+1. get all
+GET----http://localhost:8081/api/v1/admin/users
+(admin)JWT Token Required
+
+Response
+{
+        "userId": "c9ceaa10-b5f0-404b-a770-224ddf4065d9",
+        "email": "kartik@gmail.com",
+        "isAdmin": false,
+        "isEmployee": true,
+        "status": "ACTIVE",
+        "message": null
+    },
+    {
+        "userId": "38c236e1-f3a2-4d91-9002-bda541dcbb74",
+        "email": "sumit@gmail.com",
+        "isAdmin": true,
+        "isEmployee": true,
+        "status": "ACTIVE",
+        "message": null
+    }
+]
+
+
+2. give access to users
+PATCH-----http://localhost:8081/api/v1/admin/users/access?email=user1@example.com
+
+Request Body
+{
+  "isAdmin": true,
+  "isEmployee": true
+}
+{
+  "isAdmin": false,
+  "isEmployee": true
+}
+{
+  "isAdmin": true,
+  "isEmployee": false
+}
+
+Response---
+{
+    "userId": "38c236e1-f3a2-4d91-9002-bda541dcbb74",
+    "email": "sumit@gmail.com",
+    "isAdmin": true,
+    "isEmployee": true,
+    "status": "ACTIVE",
+    "message": "User access updated successfully"
+}
+
 -----------------------------------------------------------------------------------------------------------
 
 Complete API Summary
@@ -499,7 +570,7 @@ Create user
 For your HRMS, I recommend:
 
                     ┌───────────────┐
-                    │ First Setup   │
+                    │ First Setup         │
                     └───────┬───────┘
                             │
                             ▼
@@ -510,7 +581,7 @@ For your HRMS, I recommend:
                             │
                             ▼
               ┌─────────────────────────┐
-              │ Employee Management    │
+              │ Employee Management               │
               └───────────┬─────────────┘
                           │
                           ▼

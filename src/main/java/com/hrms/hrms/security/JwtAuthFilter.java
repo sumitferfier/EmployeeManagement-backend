@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,39 +15,27 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 
-//This filter runs once for every HTTP request.
-
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    // Used for extracting and validating JWT
     private final JwtTokenProvider jwtTokenProvider;
-
-    // Used for loading user from database
     private final UserDetailsServiceImpl userDetailsService;
+
+
     public JwtAuthFilter(
             JwtTokenProvider jwtTokenProvider,
             UserDetailsServiceImpl userDetailsService
     ) {
-
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
     }
 
 
-    // =========================================================
-    // JWT AUTHENTICATION FILTER
-    // =========================================================
-
     @Override
     protected void doFilterInternal(
-
             HttpServletRequest request,
-
             HttpServletResponse response,
-
             FilterChain filterChain
-
     ) throws ServletException, IOException {
 
 
@@ -58,49 +47,38 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 request.getHeader("Authorization");
 
 
-        // JWT token variable
         String token = null;
-
-        // Email extracted from JWT
         String email = null;
 
 
         // =====================================================
-        // STEP 2: CHECK FOR BEARER TOKEN
+        // STEP 2: EXTRACT BEARER TOKEN
         // =====================================================
 
-        /*
-         * Expected header:
-         *
-         * Authorization: Bearer <JWT_TOKEN>
-         */
+        if (
+                authorizationHeader != null
+                        && authorizationHeader.startsWith("Bearer ")
+        ) {
 
-        if (authorizationHeader != null
-                && authorizationHeader.startsWith("Bearer ")) {
-
-            // Remove "Bearer " from the header
             token = authorizationHeader.substring(7);
 
 
             // =================================================
-            // STEP 3: VALIDATE TOKEN AND EXTRACT EMAIL
+            // STEP 3: VALIDATE TOKEN BEFORE EXTRACTING EMAIL
             // =================================================
 
-            try {
+            if (jwtTokenProvider.validateToken(token)) {
 
-                // Validate JWT signature and expiration
-                if (jwtTokenProvider.validateToken(token)) {
+                try {
 
-                    // JWT subject contains user email
                     email = jwtTokenProvider.extractEmail(token);
+
+                } catch (Exception e) {
+
+                    System.out.println(
+                            "Unable to extract email from JWT"
+                    );
                 }
-
-            } catch (Exception e) {
-
-                // Invalid JWT token
-                System.out.println(
-                        "Unable to validate or extract email from JWT"
-                );
             }
         }
 
@@ -109,66 +87,52 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // STEP 4: AUTHENTICATE USER
         // =====================================================
 
-        /*
-         * Only authenticate if:
-         *
-         * 1. Email was successfully extracted.
-         * 2. User is not already authenticated.
-         */
+        if (
+                email != null
+                        && SecurityContextHolder
+                        .getContext()
+                        .getAuthentication() == null
+        ) {
 
-        if (email != null
-                && SecurityContextHolder
-                .getContext()
-                .getAuthentication() == null) {
-
-
-            // Load user from database using email
             UserDetails userDetails =
                     userDetailsService.loadUserByUsername(email);
 
 
-            // =================================================
-            // STEP 5: SET AUTHENTICATION
-            // =================================================
+            // Validate token again before authentication
+            if (jwtTokenProvider.validateToken(token)) {
 
-            /*
-             * UserDetails contains:
-             *
-             * Email
-             * Password
-             * Authorities:
-             * ROLE_ADMIN / ROLE_EMPLOYEE
-             */
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
+                                userDetails,
 
-                            userDetails,
+                                null,
 
-                            null,
-
-                            userDetails.getAuthorities()
-                    );
+                                userDetails.getAuthorities()
+                        );
 
 
-            // Attach request information
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request)
-            );
+                authentication.setDetails(
+
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
 
 
-            // Store authenticated user in Spring Security
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(authentication);
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
+            }
         }
 
 
         // =====================================================
-        // STEP 6: CONTINUE REQUEST
+        // STEP 5: CONTINUE REQUEST
         // =====================================================
 
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(
+                request,
+                response
+        );
     }
 }

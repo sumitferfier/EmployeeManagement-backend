@@ -220,34 +220,20 @@ public class EmployeeService {
     // GET LOGGED-IN EMPLOYEE PROFILE
     // =========================================================
 
-    @Transactional(readOnly = true)
-    public EmployeeResponse getMyProfile(
-            String email
-    ) {
-
-        /*
-         * Email comes from JWT token.
-         *
-         * JWT
-         *   ↓
-         * Email
-         *   ↓
-         * Find User
-         *   ↓
-         * Find Employee profile
-         */
-
-        Employee employee = employeeRepository
-                .findByUserEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Employee profile not found for email: "
-                                        + email
-                        )
-                );
-
-        return mapToResponse(employee);
-    }
+//    @Transactional(readOnly = true)
+//    public EmployeeResponse getMyProfile(String email
+//    ) {
+//        Employee employee = employeeRepository
+//                .findByUserEmail(email)
+//                .orElseThrow(() ->
+//                        new ResourceNotFoundException(
+//                                "Employee profile not found for email: "
+//                                        + email
+//                        )
+//                );
+//
+//        return mapToResponse(employee);
+//    }
 
 
     // =========================================================
