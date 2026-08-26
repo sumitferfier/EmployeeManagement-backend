@@ -5,6 +5,7 @@ import com.hrms.hrms.modules.auth.dto.LoginResponse;
 import com.hrms.hrms.modules.auth.dto.RegisterRequest;
 import com.hrms.hrms.modules.auth.dto.RegisterResponse;
 import com.hrms.hrms.modules.auth.service.AuthService;
+import org.springframework.http.HttpHeaders;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -44,5 +45,22 @@ public class AuthController {
     ) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+
+    // USER LOGOUT
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+
+        // Check Authorization header
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Invalid Authorization header");
+        }
+
+        // Remove "Bearer " from token
+        String token = authorizationHeader.substring(7);
+
+        // Logout user
+        authService.logout(token);
+        return ResponseEntity.ok("Logged out successfully");
     }
 }

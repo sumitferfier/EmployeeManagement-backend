@@ -1,5 +1,6 @@
 package com.hrms.hrms.security;
 
+import com.hrms.hrms.modules.auth.token.repository.BlacklistedTokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,24 +19,46 @@ import java.io.IOException;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    // =========================================================
+    // DEPENDENCIES
+    // =========================================================
+
     private final JwtTokenProvider jwtTokenProvider;
+
     private final UserDetailsServiceImpl userDetailsService;
 
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
+
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public JwtAuthFilter(
             JwtTokenProvider jwtTokenProvider,
-            UserDetailsServiceImpl userDetailsService
+            UserDetailsServiceImpl userDetailsService,
+            BlacklistedTokenRepository blacklistedTokenRepository
     ) {
+
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
     }
 
 
+    // =========================================================
+    // JWT FILTER
+    // =========================================================
+
     @Override
     protected void doFilterInternal(
+
             HttpServletRequest request,
+
             HttpServletResponse response,
+
             FilterChain filterChain
+
     ) throws ServletException, IOException {
 
 
@@ -48,6 +71,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
         String token = null;
+
         String email = null;
 
 
@@ -64,16 +88,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
             // =================================================
-            // STEP 3: VALIDATE TOKEN BEFORE EXTRACTING EMAIL
+            // STEP 3: CHECK IF TOKEN IS BLACKLISTED
             // =================================================
 
-            if (jwtTokenProvider.validateToken(token)) {
+            if (
+                    blacklistedTokenRepository
+                            .existsByToken(token)
+            ) {
+
+                // Token was invalidated during logout.
+                // Continue request without authentication.
+                filterChain.doFilter(request, response);
+
+                return;
+            }
+
+
+            // =================================================
+            // STEP 4: VALIDATE TOKEN
+            // =================================================
+
+            if (
+                    jwtTokenProvider.validateToken(token)
+            ) {
 
                 try {
 
+                    // Extract email from JWT subject.
                     email = jwtTokenProvider.extractEmail(token);
 
-                } catch (Exception e) {
+                } catch (Exception exception) {
 
                     System.out.println(
                             "Unable to extract email from JWT"
@@ -84,24 +128,35 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
         // =====================================================
-        // STEP 4: AUTHENTICATE USER
+        // STEP 5: AUTHENTICATE USER
         // =====================================================
 
         if (
+
                 email != null
+
                         && SecurityContextHolder
                         .getContext()
                         .getAuthentication() == null
+
         ) {
 
+            // Load latest user permissions from database.
             UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
+                    userDetailsService
+                            .loadUserByUsername(email);
 
 
-            // Validate token again before authentication
-            if (jwtTokenProvider.validateToken(token)) {
+            // =================================================
+            // VALIDATE TOKEN AGAIN
+            // =================================================
+
+            if (
+                    jwtTokenProvider.validateToken(token)
+            ) {
 
                 UsernamePasswordAuthenticationToken authentication =
+
                         new UsernamePasswordAuthenticationToken(
 
                                 userDetails,
@@ -112,6 +167,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         );
 
 
+                // Attach request details.
                 authentication.setDetails(
 
                         new WebAuthenticationDetailsSource()
@@ -119,6 +175,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 );
 
 
+                // Store authenticated user in Security Context.
                 SecurityContextHolder
                         .getContext()
                         .setAuthentication(authentication);
@@ -127,7 +184,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
         // =====================================================
-        // STEP 5: CONTINUE REQUEST
+        // STEP 6: CONTINUE REQUEST
         // =====================================================
 
         filterChain.doFilter(

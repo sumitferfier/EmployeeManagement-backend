@@ -15,10 +15,7 @@ import java.util.UUID;
 @Builder
 public class User {
 
-    // =========================================================
     // PRIMARY KEY
-    // =========================================================
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

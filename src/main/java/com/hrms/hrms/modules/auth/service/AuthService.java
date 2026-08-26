@@ -3,32 +3,27 @@ package com.hrms.hrms.modules.auth.service;
 import com.hrms.hrms.common.exception.BadRequestException;
 import com.hrms.hrms.common.exception.DuplicateResourceException;
 import com.hrms.hrms.common.exception.ResourceNotFoundException;
-
 import com.hrms.hrms.modules.auth.dto.LoginRequest;
 import com.hrms.hrms.modules.auth.dto.LoginResponse;
 import com.hrms.hrms.modules.auth.dto.RegisterRequest;
 import com.hrms.hrms.modules.auth.dto.RegisterResponse;
-
 import com.hrms.hrms.modules.auth.entity.User;
 import com.hrms.hrms.modules.auth.entity.UserStatus;
-
 import com.hrms.hrms.modules.auth.repository.UserRepository;
-
 import com.hrms.hrms.modules.employee.entity.Employee;
 import com.hrms.hrms.modules.employee.entity.EmployeeStatus;
 import com.hrms.hrms.modules.employee.repository.EmployeeRepository;
-
 import com.hrms.hrms.security.JwtTokenProvider;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
-
+import com.hrms.hrms.modules.auth.token.entity.BlacklistedToken;
+import com.hrms.hrms.modules.auth.token.repository.BlacklistedTokenRepository;
+import java.time.ZoneId;
+import java.util.Date;
 
 @Service
 public class AuthService {
@@ -36,17 +31,12 @@ public class AuthService {
     // =========================================================
     // DEPENDENCIES
     // =========================================================
-
     private final AuthenticationManager authenticationManager;
-
     private final UserRepository userRepository;
-
     private final EmployeeRepository employeeRepository;
-
     private final JwtTokenProvider jwtTokenProvider;
-
     private final PasswordEncoder passwordEncoder;
-
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
 
     // =========================================================
     // CONSTRUCTOR
@@ -56,13 +46,14 @@ public class AuthService {
             AuthenticationManager authenticationManager,
             UserRepository userRepository,
             EmployeeRepository employeeRepository,
+            BlacklistedTokenRepository blacklistedTokenRepository,
             JwtTokenProvider jwtTokenProvider,
             PasswordEncoder passwordEncoder
     ) {
-
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.employeeRepository = employeeRepository;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
     }
@@ -336,5 +327,36 @@ public class AuthService {
                 )
 
                 .build();
+    }
+
+// USER LOGOUT
+
+    @Transactional
+    public void logout(String token) {
+
+        // Check if token is already blacklisted
+        if (blacklistedTokenRepository.existsByToken(token)) {
+            return;
+        }
+
+        // Get JWT expiration time
+        Date expirationDate =
+                jwtTokenProvider.extractExpiration(token);
+
+        // Convert Date to LocalDateTime
+        LocalDateTime expiresAt =
+                expirationDate
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+
+        // Save token in blacklist
+        BlacklistedToken blacklistedToken =
+                BlacklistedToken.builder()
+                        .token(token)
+                        .expiresAt(expiresAt)
+                        .build();
+
+        blacklistedTokenRepository.save(blacklistedToken);
     }
 }
