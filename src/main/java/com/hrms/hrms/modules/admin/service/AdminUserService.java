@@ -8,12 +8,9 @@ import com.hrms.hrms.modules.auth.entity.User;
 import com.hrms.hrms.modules.auth.repository.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder; // for restrict oun access modification
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
-
 
 @Service
 public class AdminUserService {
@@ -24,14 +21,9 @@ public class AdminUserService {
         this.userRepository = userRepository;
     }
 
-
-    // =========================================================
     // GET ALL REGISTERED USERS
-    // =========================================================
-
     @Transactional(readOnly = true)
     public List<UserAccessResponse> getAllUsers() {
-
         return userRepository
                 .findAll()
                 .stream()
@@ -39,16 +31,11 @@ public class AdminUserService {
                 .toList();
     }
 
-
-    // =========================================================
     // GET USER BY EMAIL
-    // =========================================================
-
     @Transactional(readOnly = true)
     public UserAccessResponse getUserByEmail(
             String email
     ) {
-
         User user = userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
@@ -86,23 +73,12 @@ public class AdminUserService {
 
         // =====================================================
         // STEP 2: PREVENT ADMIN FROM CHANGING OWN ACCESS
-        // =====================================================
-
-        if (
-                loggedInAdminEmail.equalsIgnoreCase(email)
-        ) {
-
-            throw new BadRequestException(
-                    "You cannot change your own access permissions."
-            );
+        if (loggedInAdminEmail.equalsIgnoreCase(email)) {
+            throw new BadRequestException("You cannot change your own access permissions.");
         }
 
-
-        // =====================================================
         // STEP 3: FIND TARGET USER BY EMAIL
-        // =====================================================
-
-        User user = userRepository
+                User user = userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(

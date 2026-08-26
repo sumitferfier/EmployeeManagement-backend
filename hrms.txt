@@ -444,6 +444,9 @@ Response---
     "message": "User access updated successfully"
 }
 
+Logout API------------------------------------------------------
+
+POST------http://localhost:8081/api/v1/auth/logout
 -----------------------------------------------------------------------------------------------------------
 
 Complete API Summary

@@ -13,4 +13,6 @@ public class LoginResponse {
     private String email;
     private boolean isAdmin;
     private boolean isEmployee;
+    private String firstName;
+    private String lastName;
 }

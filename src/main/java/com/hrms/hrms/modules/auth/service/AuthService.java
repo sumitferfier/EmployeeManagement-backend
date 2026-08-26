@@ -10,6 +10,8 @@ import com.hrms.hrms.modules.auth.dto.RegisterResponse;
 import com.hrms.hrms.modules.auth.entity.User;
 import com.hrms.hrms.modules.auth.entity.UserStatus;
 import com.hrms.hrms.modules.auth.repository.UserRepository;
+import com.hrms.hrms.modules.auth.token.entity.BlacklistedToken;
+import com.hrms.hrms.modules.auth.token.repository.BlacklistedTokenRepository;
 import com.hrms.hrms.modules.employee.entity.Employee;
 import com.hrms.hrms.modules.employee.entity.EmployeeStatus;
 import com.hrms.hrms.modules.employee.repository.EmployeeRepository;
@@ -20,17 +22,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
-import com.hrms.hrms.modules.auth.token.entity.BlacklistedToken;
-import com.hrms.hrms.modules.auth.token.repository.BlacklistedTokenRepository;
 import java.time.ZoneId;
 import java.util.Date;
 
 @Service
 public class AuthService {
 
-    // =========================================================
     // DEPENDENCIES
-    // =========================================================
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
@@ -38,10 +36,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final BlacklistedTokenRepository blacklistedTokenRepository;
 
-    // =========================================================
     // CONSTRUCTOR
-    // =========================================================
-
     public AuthService(
             AuthenticationManager authenticationManager,
             UserRepository userRepository,
@@ -50,6 +45,7 @@ public class AuthService {
             JwtTokenProvider jwtTokenProvider,
             PasswordEncoder passwordEncoder
     ) {
+
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.employeeRepository = employeeRepository;
@@ -83,254 +79,110 @@ public class AuthService {
         // =====================================================
 
         /*
-         * Default permissions for a newly registered user:
+         * Default permissions:
          *
          * isAdmin    = false
          * isEmployee = true
          */
 
-        User user = User.builder()
-
-                .email(
-                        request.getEmail().trim()
-                )
-
-                .password(
-                        passwordEncoder.encode(
-                                request.getPassword()
-                        )
-                )
-
+        User user = User.builder().email(request.getEmail().trim())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .isAdmin(false)
-
                 .isEmployee(true)
-
                 .status(UserStatus.ACTIVE)
-
                 .build();
 
-
-        // =====================================================
         // STEP 3: SAVE USER
-        // =====================================================
-
         User savedUser = userRepository.save(user);
 
-
-        // =====================================================
         // STEP 4: CREATE EMPLOYEE PROFILE
-        // =====================================================
-
-        /*
-         * When a user registers,
-         * an Employee profile is automatically created.
-         *
-         * Admin can later complete:
-         *
-         * - Employee Code
-         * - Department
-         * - Designation
-         * - Date of Joining
-         * - Reporting Manager
-         */
-
         Employee employee = Employee.builder()
-
                 .user(savedUser)
-
-                .firstName(
-                        request.getFirstName().trim()
-                )
-
-                .lastName(
-                        request.getLastName().trim()
-                )
-
+                .firstName(request.getFirstName().trim())
+                .lastName(request.getLastName().trim())
                 .employeeCode(null)
-
                 .department(null)
-
                 .designation(null)
-
                 .dateOfJoining(null)
-
                 .reportingManager(null)
-
                 .status(EmployeeStatus.ACTIVE)
-
                 .build();
 
-
-        // =====================================================
         // STEP 5: SAVE EMPLOYEE PROFILE
-        // =====================================================
-
         employeeRepository.save(employee);
 
-
-        // =====================================================
         // STEP 6: RETURN RESPONSE
-        // =====================================================
-
         return RegisterResponse.builder()
-
-                .userId(
-                        savedUser.getId()
-                )
-
-                .email(
-                        savedUser.getEmail()
-                )
-
-                .isAdmin(
-                        savedUser.isAdmin()
-                )
-
-                .isEmployee(
-                        savedUser.isEmployee()
-                )
-
-                .status(
-                        savedUser.getStatus().name()
-                )
-
-                .message(
-                        "User registered successfully"
-                )
-
+                .userId(savedUser.getId())
+                .email(savedUser.getEmail())
+                .isAdmin(savedUser.isAdmin())
+                .isEmployee(savedUser.isEmployee())
+                .status(savedUser.getStatus().name())
+                .message("User registered successfully")
                 .build();
     }
 
-
-    // =========================================================
     // USER LOGIN
-    // =========================================================
-
     @Transactional
     public LoginResponse login(LoginRequest request) {
 
-        // =====================================================
         // STEP 1: AUTHENTICATE EMAIL AND PASSWORD
-        // =====================================================
-
         authenticationManager.authenticate(
-
                 new UsernamePasswordAuthenticationToken(
-
                         request.getEmail(),
-
                         request.getPassword()
                 )
         );
 
-
-        // =====================================================
-        // STEP 2: GET USER FROM DATABASE
-        // =====================================================
-
+        // STEP 2: GET USER USING EMAIL
         User user = userRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
 
-                .findByEmail(
-                        request.getEmail()
-                )
-
-                .orElseThrow(() ->
-
-                        new ResourceNotFoundException(
-                                "User not found"
-                        )
-                );
-
-
-        // =====================================================
         // STEP 3: CHECK ACCOUNT STATUS
-        // =====================================================
-
         if (user.getStatus() == UserStatus.INACTIVE) {
-
-            throw new BadRequestException(
-
-                    "Your account is inactive. " +
-                            "Please contact the administrator."
-            );
+            throw new BadRequestException("Your account is inactive. " + "Please contact the administrator.");
         }
 
-
-        // =====================================================
         // STEP 4: CHECK USER ACCESS
-        // =====================================================
-
-        /*
-         * If both permissions are false,
-         * the user cannot access the system.
-         */
-
         if (!user.isAdmin() && !user.isEmployee()) {
-
-            throw new BadRequestException(
-
-                    "You do not have permission " +
-                            "to access the application."
-            );
+            throw new BadRequestException("You do not have permission " + "to access the application.");
         }
 
+        // STEP 5: GET EMPLOYEE PROFILE USING EMAIL
+        Employee employee = employeeRepository
+                .findByUserEmail(user.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee profile not found for email: " + user.getEmail()));
 
-        // =====================================================
-        // STEP 5: UPDATE LAST LOGIN
-        // =====================================================
-
+        // STEP 6: UPDATE LAST LOGIN
         user.setLastLogin(
                 LocalDateTime.now()
         );
 
         userRepository.save(user);
 
-
-        // =====================================================
-        // STEP 6: GENERATE JWT TOKEN
-        // =====================================================
-
+        // STEP 7: GENERATE JWT TOKEN
         String token = jwtTokenProvider.generateToken(
-
                 user.getEmail(),
-
                 user.isAdmin(),
-
                 user.isEmployee()
         );
 
-
-        // =====================================================
-        // STEP 7: RETURN LOGIN RESPONSE
-        // =====================================================
-
+        // STEP 8: RETURN LOGIN RESPONSE
         return LoginResponse.builder()
-
                 .token(token)
-
                 .tokenType("Bearer")
-
-                .userId(
-                        user.getId()
-                )
-
-                .email(
-                        user.getEmail()
-                )
-
-                .isAdmin(
-                        user.isAdmin()
-                )
-
-                .isEmployee(
-                        user.isEmployee()
-                )
-
+                .userId(user.getId())
+                .email(user.getEmail())
+                .isAdmin(user.isAdmin())
+                .isEmployee(user.isEmployee())
+                // Employee details fetched using email
+                .firstName(employee.getFirstName())
+                .lastName(employee.getLastName())
                 .build();
     }
 
-// USER LOGOUT
-
+    // USER LOGOUT
     @Transactional
     public void logout(String token) {
 
@@ -339,24 +191,24 @@ public class AuthService {
             return;
         }
 
-        // Get JWT expiration time
-        Date expirationDate =
-                jwtTokenProvider.extractExpiration(token);
+        // GET JWT EXPIRATION TIME
+        Date expirationDate = jwtTokenProvider.extractExpiration(token);
 
-        // Convert Date to LocalDateTime
+        // CONVERT DATE TO LOCALDATETIME
         LocalDateTime expiresAt =
                 expirationDate
                         .toInstant()
-                        .atZone(ZoneId.systemDefault())
+                        .atZone(
+                                ZoneId.systemDefault()
+                        )
                         .toLocalDateTime();
 
-        // Save token in blacklist
+        // SAVE TOKEN IN BLACKLIST
         BlacklistedToken blacklistedToken =
                 BlacklistedToken.builder()
                         .token(token)
                         .expiresAt(expiresAt)
                         .build();
-
         blacklistedTokenRepository.save(blacklistedToken);
     }
 }
