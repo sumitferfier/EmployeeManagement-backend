@@ -12,22 +12,27 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/v1/employees")
 public class EmployeeController {
 
+
     private final EmployeeService employeeService;
+
 
     public EmployeeController(
             EmployeeService employeeService
     ) {
-        this.employeeService = employeeService;
+
+        this.employeeService =
+                employeeService;
     }
 
 
-    // =========================================================
+    // =====================================================
     // GET ALL EMPLOYEES
-    // =========================================================
+    // =====================================================
 
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>>
@@ -39,26 +44,27 @@ public class EmployeeController {
     }
 
 
-    // =========================================================
+    // =====================================================
     // GET EMPLOYEE BY EMAIL
-    // =========================================================
+    // =====================================================
 
     @GetMapping(params = "email")
     public ResponseEntity<EmployeeResponse>
     getEmployeeByEmail(
-
             @RequestParam String email
     ) {
 
         return ResponseEntity.ok(
-                employeeService.getEmployeeByEmail(email)
+                employeeService.getEmployeeByEmail(
+                        email
+                )
         );
     }
 
 
-    // =========================================================
-    // GET LOGGED-IN USER PROFILE
-    // =========================================================
+    // =====================================================
+    // GET MY PROFILE
+    // =====================================================
 
     @GetMapping("/me")
     public ResponseEntity<EmployeeResponse>
@@ -66,17 +72,20 @@ public class EmployeeController {
             Authentication authentication
     ) {
 
+        String email =
+                authentication.getName();
+
         return ResponseEntity.ok(
                 employeeService.getMyProfile(
-                        authentication.getName()
+                        email
                 )
         );
     }
 
 
-    // =========================================================
-    // UPDATE EMPLOYEE MANAGEMENT DETAILS
-    // =========================================================
+    // =====================================================
+    // UPDATE EMPLOYEE
+    // =====================================================
 
     @PatchMapping
     public ResponseEntity<EmployeeResponse>
@@ -93,24 +102,6 @@ public class EmployeeController {
                 employeeService.updateEmployee(
                         email,
                         request
-                )
-        );
-    }
-
-
-    // =========================================================
-    // GET MANAGER TEAM
-    // =========================================================
-
-    @GetMapping("/team")
-    public ResponseEntity<List<EmployeeResponse>>
-    getEmployeeTeam(
-            Authentication authentication
-    ) {
-
-        return ResponseEntity.ok(
-                employeeService.getEmployeeTeam(
-                        authentication.getName()
                 )
         );
     }

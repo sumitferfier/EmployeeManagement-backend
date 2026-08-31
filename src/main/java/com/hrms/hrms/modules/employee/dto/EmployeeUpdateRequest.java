@@ -1,33 +1,97 @@
 package com.hrms.hrms.modules.employee.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+
+// =========================================================
+// EMPLOYEE UPDATE REQUEST
+// =========================================================
+
 public class EmployeeUpdateRequest {
 
-    // Department selected by Admin
-    @NotBlank(message = "Department name is required")
-    private String departmentName;
 
-    // Job designation assigned by Admin
-    @NotBlank(message = "Designation is required")
-    private String designation;
-
-    // Date employee officially joined
-    private LocalDate dateOfJoining;
+    // =====================================================
+    // DEPARTMENT
+    // =====================================================
 
     /*
-     * Reporting Manager is identified using email.
+     * Admin provides department name.
      *
-     * Email is safer than manager name because
-     * multiple employees can have the same name.
+     * Example:
+     * IT
      */
+
+    private String departmentName;
+
+
+    // =====================================================
+    // DESIGNATION
+    // =====================================================
+
+    private String designation;
+
+
+    // =====================================================
+    // DATE OF JOINING
+    // =====================================================
+
+    private LocalDate dateOfJoining;
+
+
+    // =====================================================
+    // REPORTING MANAGER EMAIL
+    // =====================================================
+
+    /*
+     * Example:
+     *
+     * manager@gmail.com
+     */
+
     private String reportingManagerEmail;
+
+
+    // =====================================================
+    // GETTERS / SETTERS
+    // =====================================================
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
+    }
+
+
+    public String getDesignation() {
+        return designation;
+    }
+
+    public void setDesignation(String designation) {
+        this.designation = designation;
+    }
+
+
+    public LocalDate getDateOfJoining() {
+        return dateOfJoining;
+    }
+
+    public void setDateOfJoining(LocalDate dateOfJoining) {
+        this.dateOfJoining = dateOfJoining;
+    }
+
+
+    public String getReportingManagerEmail() {
+        return reportingManagerEmail;
+    }
+
+    public void setReportingManagerEmail(
+            String reportingManagerEmail
+    ) {
+        this.reportingManagerEmail = reportingManagerEmail;
+    }
 }

@@ -277,6 +277,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/employees/**")
                         .hasRole("ADMIN")
 
+                        //Leave Management
+                        .requestMatchers("/api/v1/leaves/**")
+                        .hasRole("EMPLOYEE")
+
                         // Everything else
                         .anyRequest()
                         .authenticated()

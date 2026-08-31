@@ -59,23 +59,6 @@ public class Employee {
     // EMPLOYEE DETAILS
     // =====================================================
 
-    /*
-     * Employee code is assigned later by Admin.
-     *
-     * During signup it can be NULL.
-     */
-
-    @Column(
-            name = "employee_code",
-            unique = true
-    )
-    private String employeeCode;
-
-
-    /*
-     * First name comes from signup.
-     */
-
     @Column(
             name = "first_name",
             nullable = false
@@ -83,20 +66,12 @@ public class Employee {
     private String firstName;
 
 
-    /*
-     * Last name comes from signup.
-     */
-
     @Column(
             name = "last_name",
             nullable = false
     )
     private String lastName;
 
-
-    /*
-     * Phone can be updated later.
-     */
 
     @Column(name = "phone")
     private String phone;
@@ -107,9 +82,7 @@ public class Employee {
     // =====================================================
 
     /*
-     * Department is assigned later by Admin.
-     *
-     * During signup it can be NULL.
+     * Department is assigned by Admin.
      */
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -121,21 +94,9 @@ public class Employee {
     // JOB INFORMATION
     // =====================================================
 
-    /*
-     * Designation is assigned later by Admin.
-     *
-     * During signup it can be NULL.
-     */
-
     @Column(name = "designation")
     private String designation;
 
-
-    /*
-     * Date of joining is assigned later by Admin.
-     *
-     * During signup it can be NULL.
-     */
 
     @Column(name = "date_of_joining")
     private LocalDate dateOfJoining;
@@ -146,27 +107,23 @@ public class Employee {
     // =====================================================
 
     /*
-     * Self-referencing relationship.
+     * Reporting manager is identified using EMAIL.
      *
-     * Employee
-     *    ↓
-     * Reporting Manager
+     * Example:
      *
-     * During signup it can be NULL.
+     * reporting_manager_email =
+     * manager@gmail.com
+     *
+     * This makes the database easier to understand.
      */
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reporting_manager_id")
-    private Employee reportingManager;
+    @Column(name = "reporting_manager_email")
+    private String reportingManagerEmail;
 
 
     // =====================================================
     // EMPLOYMENT STATUS
     // =====================================================
-
-    /*
-     * New employees are ACTIVE by default.
-     */
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

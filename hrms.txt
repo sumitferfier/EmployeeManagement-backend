@@ -447,6 +447,87 @@ Response---
 Logout API------------------------------------------------------
 
 POST------http://localhost:8081/api/v1/auth/logout
+
+Leave Management-----------------------------------------------
+Create leave
+POST---http://localhost:8081/api/v1/leaves
+
+Response Body---
+{
+    "id": "615016ad-1830-43a8-95aa-f727aa90ca40",
+    "name": "Sumit Sharma",
+    "email": "sumit@ferfier.com",
+    "requestedTo": "kartik@ferfier.com",
+    "leaveType": "SICK",
+    "from": "2026-09-10",
+    "to": "2026-09-11",
+    "reason": "Not feeling well",
+    "status": "PENDING"
+}
+
+Employee Check Own Leave
+GET---http://localhost:8081/api/v1/leaves/my
+
+Response Body---
+    {
+        "id": "c119b128-46d3-4b47-bd6a-7d4e1ee6babc",
+        "name": "Sumit Sharma",
+        "email": "sumit@ferfier.com",
+        "requestedTo": "kartik@ferfier.com",
+        "leaveType": "CASUAL",
+        "from": "2026-09-01",
+        "to": "2026-09-03",
+        "reason": "Personal work",
+        "status": "APPROVED"
+    }
+
+Get All Leaves
+GET---http://localhost:8081/api/v1/leaves/team/pending
+
+Response Body
+    {
+        "id": "c119b128-46d3-4b47-bd6a-7d4e1ee6babc",
+        "name": "Sumit Sharma",
+        "email": "sumit@ferfier.com",
+        "requestedTo": "kartik@ferfier.com",
+        "leaveType": "CASUAL",
+        "from": "2026-09-01",
+        "to": "2026-09-03",
+        "reason": "Personal work",
+        "status": "PENDING"
+    }
+
+Manager Approved
+PATCH--http://localhost:8081/api/v1/leaves/user_id/approve
+
+Response Body
+{
+    "id": "c119b128-46d3-4b47-bd6a-7d4e1ee6babc",
+    "name": "Sumit Sharma",
+    "email": "sumit@ferfier.com",
+    "requestedTo": "kartik@ferfier.com",
+    "leaveType": "CASUAL",
+    "from": "2026-09-01",
+    "to": "2026-09-03",
+    "reason": "Personal work",
+    "status": "APPROVED"
+}
+
+Manager Rejected
+PATCH---http://localhost:8081/api/v1/leaves/615016ad-1830-43a8-95aa-f727aa90ca40/reject
+
+Response Body
+{
+    "id": "615016ad-1830-43a8-95aa-f727aa90ca40",
+    "name": "Sumit Sharma",
+    "email": "sumit@ferfier.com",
+    "requestedTo": "kartik@ferfier.com",
+    "leaveType": "SICK",
+    "from": "2026-09-10",
+    "to": "2026-09-11",
+    "reason": "Not feeling well",
+    "status": "REJECTED"
+}
 -----------------------------------------------------------------------------------------------------------
 
 Complete API Summary

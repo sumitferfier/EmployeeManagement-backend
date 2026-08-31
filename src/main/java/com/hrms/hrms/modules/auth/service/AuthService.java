@@ -90,7 +90,7 @@ public class AuthService {
                 .department(null)
                 .designation(null)
                 .dateOfJoining(null)
-                .reportingManager(null)
+                .reportingManagerEmail(null)
                 .status(EmployeeStatus.ACTIVE)
                 .build();
 
