@@ -1,76 +1,117 @@
 package com.hrms.hrms.modules.employee.controller;
 
-import com.hrms.hrms.modules.employee.dto.EmployeeRequest;
 import com.hrms.hrms.modules.employee.dto.EmployeeResponse;
+import com.hrms.hrms.modules.employee.dto.EmployeeUpdateRequest;
 import com.hrms.hrms.modules.employee.service.EmployeeService;
-import org.springframework.security.core.Authentication;
 
 import jakarta.validation.Valid;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.UUID;
 
-/*REST Controller for Employee Management.
- * Base URL: /api/v1/employees
- * All endpoints in this controller are currently
- * protected as ADMIN-only in SecurityConfig.*/
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/employees")
 public class EmployeeController {
+
     private final EmployeeService employeeService;
-    public EmployeeController(EmployeeService employeeService) {
+
+    public EmployeeController(
+            EmployeeService employeeService
+    ) {
         this.employeeService = employeeService;
     }
 
-    // CREATE EMPLOYEE
-    @PostMapping
-    public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest request) {
-        EmployeeResponse response = employeeService.createEmployee(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 
+    // =========================================================
     // GET ALL EMPLOYEES
+    // =========================================================
+
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>>
     getAllEmployees() {
-        return ResponseEntity.ok(employeeService.getAllEmployees());
+
+        return ResponseEntity.ok(
+                employeeService.getAllEmployees()
+        );
     }
 
-    // GET LOGGED-IN EMPLOYEE PROFILE
-//    @GetMapping("/me")
-//    public ResponseEntity<EmployeeResponse> getMyProfile(
-//            Authentication authentication
-//    ) {
-//
-//        String email = authentication.getName();
-//
-//        return ResponseEntity.ok(
-//                employeeService.getMyProfile(email)
-//        );
-//    }
 
-    // GET EMPLOYEE BY UUID
-    @GetMapping("/{id}")
+    // =========================================================
+    // GET EMPLOYEE BY EMAIL
+    // =========================================================
+
+    @GetMapping(params = "email")
     public ResponseEntity<EmployeeResponse>
-    getEmployeeById(@PathVariable UUID id) {
-        return ResponseEntity.ok(employeeService.getEmployeeById(id));
+    getEmployeeByEmail(
+
+            @RequestParam String email
+    ) {
+
+        return ResponseEntity.ok(
+                employeeService.getEmployeeByEmail(email)
+        );
     }
 
-    // UPDATE EMPLOYEE
-    @PutMapping("/{id}")
+
+    // =========================================================
+    // GET LOGGED-IN USER PROFILE
+    // =========================================================
+
+    @GetMapping("/me")
     public ResponseEntity<EmployeeResponse>
-    updateEmployee(@PathVariable UUID id, @Valid @RequestBody EmployeeRequest request) {
-        return ResponseEntity.ok(employeeService.updateEmployee(id, request));
+    getMyProfile(
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(
+                employeeService.getMyProfile(
+                        authentication.getName()
+                )
+        );
     }
 
-    // DELETE EMPLOYEE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String>
-    deleteEmployee(@PathVariable UUID id) {
-        employeeService.deleteEmployee(id);
-        return ResponseEntity.ok("Employee deleted successfully");
+
+    // =========================================================
+    // UPDATE EMPLOYEE MANAGEMENT DETAILS
+    // =========================================================
+
+    @PatchMapping
+    public ResponseEntity<EmployeeResponse>
+    updateEmployee(
+
+            @RequestParam String email,
+
+            @Valid
+            @RequestBody
+            EmployeeUpdateRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                employeeService.updateEmployee(
+                        email,
+                        request
+                )
+        );
+    }
+
+
+    // =========================================================
+    // GET MANAGER TEAM
+    // =========================================================
+
+    @GetMapping("/team")
+    public ResponseEntity<List<EmployeeResponse>>
+    getEmployeeTeam(
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(
+                employeeService.getEmployeeTeam(
+                        authentication.getName()
+                )
+        );
     }
 }

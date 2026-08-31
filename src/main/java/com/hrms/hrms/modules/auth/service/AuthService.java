@@ -54,30 +54,17 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
-    // =========================================================
     // USER REGISTRATION
-    // =========================================================
-
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
 
-        // =====================================================
         // STEP 1: CHECK EMAIL
-        // =====================================================
-
         if (userRepository.existsByEmail(request.getEmail())) {
-
-            throw new DuplicateResourceException(
-                    "Email already exists: " + request.getEmail()
-            );
+            throw new DuplicateResourceException("Email already exists: " + request.getEmail());
         }
 
 
-        // =====================================================
         // STEP 2: CREATE USER ACCOUNT
-        // =====================================================
-
         /*
          * Default permissions:
          *
@@ -100,7 +87,6 @@ public class AuthService {
                 .user(savedUser)
                 .firstName(request.getFirstName().trim())
                 .lastName(request.getLastName().trim())
-                .employeeCode(null)
                 .department(null)
                 .designation(null)
                 .dateOfJoining(null)

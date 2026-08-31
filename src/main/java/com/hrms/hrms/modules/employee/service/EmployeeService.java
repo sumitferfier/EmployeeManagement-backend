@@ -1,189 +1,31 @@
 package com.hrms.hrms.modules.employee.service;
 
 import com.hrms.hrms.common.exception.BadRequestException;
-import com.hrms.hrms.common.exception.DuplicateResourceException;
 import com.hrms.hrms.common.exception.ResourceNotFoundException;
-
-import com.hrms.hrms.modules.auth.entity.User;
-import com.hrms.hrms.modules.auth.repository.UserRepository;
-
 import com.hrms.hrms.modules.department.entity.Department;
 import com.hrms.hrms.modules.department.repository.DepartmentRepository;
-
-import com.hrms.hrms.modules.employee.dto.EmployeeRequest;
 import com.hrms.hrms.modules.employee.dto.EmployeeResponse;
-
+import com.hrms.hrms.modules.employee.dto.EmployeeUpdateRequest;
 import com.hrms.hrms.modules.employee.entity.Employee;
-import com.hrms.hrms.modules.employee.entity.EmployeeStatus;
-
 import com.hrms.hrms.modules.employee.repository.EmployeeRepository;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.UUID;
 
-
 @Service
 public class EmployeeService {
-
-    // =========================================================
-    // DEPENDENCIES
-    // =========================================================
-
     private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
-
-
-    // =========================================================
-    // CONSTRUCTOR
-    // =========================================================
-
     public EmployeeService(
             EmployeeRepository employeeRepository,
-            UserRepository userRepository,
             DepartmentRepository departmentRepository
     ) {
-
         this.employeeRepository = employeeRepository;
-        this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
     }
 
-
-    // =========================================================
-    // CREATE EMPLOYEE
-    // =========================================================
-
-    @Transactional
-    public EmployeeResponse createEmployee(
-            EmployeeRequest request
-    ) {
-
-        // Check whether employee code already exists.
-        if (employeeRepository.existsByEmployeeCode(
-                request.getEmployeeCode()
-        )) {
-
-            throw new DuplicateResourceException(
-                    "Employee code already exists: "
-                            + request.getEmployeeCode()
-            );
-        }
-
-
-        // Find the User account.
-        User user = userRepository
-                .findById(request.getUserId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with ID: "
-                                        + request.getUserId()
-                        )
-                );
-
-
-        // One User can have only one Employee profile.
-        if (employeeRepository.existsByUserId(
-                request.getUserId()
-        )) {
-
-            throw new DuplicateResourceException(
-                    "Employee already exists for user ID: "
-                            + request.getUserId()
-            );
-        }
-
-
-        // Find Department.
-        Department department = departmentRepository
-                .findById(request.getDepartmentId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Department not found with ID: "
-                                        + request.getDepartmentId()
-                        )
-                );
-
-
-        // Find reporting manager if provided.
-        Employee reportingManager = null;
-
-        if (request.getReportingManagerId() != null) {
-
-            reportingManager = employeeRepository
-                    .findById(request.getReportingManagerId())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Reporting manager not found with ID: "
-                                            + request.getReportingManagerId()
-                            )
-                    );
-        }
-
-
-        // Convert request status to EmployeeStatus enum.
-        EmployeeStatus status = parseEmployeeStatus(
-                request.getStatus()
-        );
-
-
-        // Create Employee entity.
-        Employee employee = Employee.builder()
-
-                .user(user)
-
-                .employeeCode(
-                        request.getEmployeeCode().trim()
-                )
-
-                .firstName(
-                        request.getFirstName().trim()
-                )
-
-                .lastName(
-                        request.getLastName().trim()
-                )
-
-                .phone(
-                        request.getPhone()
-                )
-
-                .department(department)
-
-                .designation(
-                        request.getDesignation().trim()
-                )
-
-                .dateOfJoining(
-                        request.getDateOfJoining()
-                )
-
-                .reportingManager(
-                        reportingManager
-                )
-
-                .status(status)
-
-                .build();
-
-
-        // Save Employee.
-        Employee savedEmployee =
-                employeeRepository.save(employee);
-
-
-        // Return response.
-        return mapToResponse(savedEmployee);
-    }
-
-
-    // =========================================================
     // GET ALL EMPLOYEES
-    // =========================================================
-
     @Transactional(readOnly = true)
     public List<EmployeeResponse> getAllEmployees() {
 
@@ -194,128 +36,81 @@ public class EmployeeService {
                 .toList();
     }
 
-
-    // =========================================================
-    // GET EMPLOYEE BY ID
-    // =========================================================
-
+    // GET EMPLOYEE BY EMAIL
     @Transactional(readOnly = true)
-    public EmployeeResponse getEmployeeById(
-            UUID id
+    public EmployeeResponse getEmployeeByEmail(
+            String email
     ) {
 
-        Employee employee = employeeRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Employee not found with ID: " + id
-                        )
-                );
-
+        Employee employee = findEmployeeByEmail(email);
         return mapToResponse(employee);
     }
 
-
-    // =========================================================
     // GET LOGGED-IN EMPLOYEE PROFILE
-    // =========================================================
-
-//    @Transactional(readOnly = true)
-//    public EmployeeResponse getMyProfile(String email
-//    ) {
-//        Employee employee = employeeRepository
-//                .findByUserEmail(email)
-//                .orElseThrow(() ->
-//                        new ResourceNotFoundException(
-//                                "Employee profile not found for email: "
-//                                        + email
-//                        )
-//                );
-//
-//        return mapToResponse(employee);
-//    }
-
-
-    // =========================================================
-    // UPDATE EMPLOYEE
-    // =========================================================
-
-    @Transactional
-    public EmployeeResponse updateEmployee(
-            UUID id,
-            EmployeeRequest request
+    @Transactional(readOnly = true)
+    public EmployeeResponse getMyProfile(
+            String email
     ) {
 
-        // Find existing employee.
-        Employee employee = employeeRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Employee not found with ID: " + id
-                        )
-                );
+        return getEmployeeByEmail(email);
+    }
+
+    // UPDATE EMPLOYEE MANAGEMENT DETAILS
+    @Transactional
+    public EmployeeResponse updateEmployee(
+
+            String email,
+
+            EmployeeUpdateRequest request
+    ) {
+
+        // =====================================================
+        // STEP 1: FIND EMPLOYEE USING EMAIL
+        // =====================================================
+
+        Employee employee = findEmployeeByEmail(email);
 
 
-        // Check employee code duplication.
-        employeeRepository
-                .findByEmployeeCode(
-                        request.getEmployeeCode()
-                )
-                .ifPresent(existingEmployee -> {
+        // =====================================================
+        // STEP 2: FIND OR CREATE DEPARTMENT
+        // =====================================================
 
-                    if (!existingEmployee.getId().equals(id)) {
+        String departmentName =
+                request.getDepartmentName().trim();
 
-                        throw new DuplicateResourceException(
-                                "Employee code already exists: "
-                                        + request.getEmployeeCode()
-                        );
-                    }
-                });
-
-
-        // Find User.
-        User user = userRepository
-                .findById(request.getUserId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with ID: "
-                                        + request.getUserId()
-                        )
-                );
-
-
-        // Prevent User from being linked to another Employee.
-        employeeRepository
-                .findByUserId(request.getUserId())
-                .ifPresent(existingEmployee -> {
-
-                    if (!existingEmployee.getId().equals(id)) {
-
-                        throw new DuplicateResourceException(
-                                "User is already assigned to another employee"
-                        );
-                    }
-                });
-
-
-        // Find Department.
         Department department = departmentRepository
-                .findById(request.getDepartmentId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Department not found with ID: "
-                                        + request.getDepartmentId()
-                        )
-                );
+                .findByDepartmentName(departmentName)
+                .orElseGet(() -> {
+
+                    Department newDepartment =
+                            Department.builder()
+                                    .departmentName(departmentName)
+                                    .build();
+
+                    return departmentRepository.save(
+                            newDepartment
+                    );
+                });
 
 
-        // Find reporting manager.
+        // =====================================================
+        // STEP 3: FIND REPORTING MANAGER USING EMAIL
+        // =====================================================
+
         Employee reportingManager = null;
 
-        if (request.getReportingManagerId() != null) {
+        if (
+                request.getReportingManagerEmail() != null
+                        &&
+                        !request.getReportingManagerEmail().isBlank()
+        ) {
 
-            // Employee cannot be their own manager.
-            if (request.getReportingManagerId().equals(id)) {
+            String managerEmail =
+                    request.getReportingManagerEmail().trim();
+
+
+            // Employee cannot be their own manager
+            if (managerEmail.equalsIgnoreCase(email)) {
 
                 throw new BadRequestException(
                         "Employee cannot be their own reporting manager"
@@ -324,36 +119,19 @@ public class EmployeeService {
 
 
             reportingManager = employeeRepository
-                    .findById(
-                            request.getReportingManagerId()
-                    )
+                    .findByUserEmail(managerEmail)
                     .orElseThrow(() ->
                             new ResourceNotFoundException(
-                                    "Reporting manager not found with ID: "
-                                            + request.getReportingManagerId()
+                                    "Reporting manager not found with email: "
+                                            + managerEmail
                             )
                     );
         }
 
 
-        // Update Employee fields.
-        employee.setUser(user);
-
-        employee.setEmployeeCode(
-                request.getEmployeeCode().trim()
-        );
-
-        employee.setFirstName(
-                request.getFirstName().trim()
-        );
-
-        employee.setLastName(
-                request.getLastName().trim()
-        );
-
-        employee.setPhone(
-                request.getPhone()
-        );
+        // =====================================================
+        // STEP 4: UPDATE EMPLOYEE MANAGEMENT DETAILS
+        // =====================================================
 
         employee.setDepartment(
                 department
@@ -372,72 +150,59 @@ public class EmployeeService {
         );
 
 
-        // Update status.
-        employee.setStatus(
-                parseEmployeeStatus(
-                        request.getStatus()
-                )
-        );
+        // =====================================================
+        // STEP 5: SAVE UPDATED EMPLOYEE
+        // =====================================================
 
-
-        // Save updated Employee.
         Employee updatedEmployee =
                 employeeRepository.save(employee);
+
+
+        // =====================================================
+        // STEP 6: RETURN RESPONSE
+        // =====================================================
 
         return mapToResponse(updatedEmployee);
     }
 
 
     // =========================================================
-    // DELETE EMPLOYEE
+    // GET EMPLOYEE TEAM
     // =========================================================
 
-    @Transactional
-    public void deleteEmployee(
-            UUID id
+    @Transactional(readOnly = true)
+    public List<EmployeeResponse> getEmployeeTeam(
+            String managerEmail
     ) {
 
-        Employee employee = employeeRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Employee not found with ID: " + id
-                        )
-                );
+        Employee manager = findEmployeeByEmail(managerEmail);
 
-
-        // Delete Employee profile.
-        employeeRepository.delete(employee);
+        return employeeRepository
+                .findByReportingManagerId(
+                        manager.getId()
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
 
     // =========================================================
-    // PARSE EMPLOYEE STATUS
+    // FIND EMPLOYEE HELPER
     // =========================================================
 
-    private EmployeeStatus parseEmployeeStatus(
-            String status
+    private Employee findEmployeeByEmail(
+            String email
     ) {
 
-        // Default status.
-        if (status == null || status.isBlank()) {
-
-            return EmployeeStatus.ACTIVE;
-        }
-
-        try {
-
-            return EmployeeStatus.valueOf(
-                    status.trim().toUpperCase()
-            );
-
-        } catch (IllegalArgumentException exception) {
-
-            throw new BadRequestException(
-                    "Invalid employee status. Allowed values are: "
-                            + "ACTIVE, INACTIVE"
-            );
-        }
+        return employeeRepository
+                .findByUserEmail(email.trim())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee not found with email: "
+                                        + email
+                        )
+                );
     }
 
 
@@ -449,38 +214,14 @@ public class EmployeeService {
             Employee employee
     ) {
 
-        String reportingManagerName = null;
-        UUID reportingManagerId = null;
-
         UUID departmentId = null;
         String departmentName = null;
 
-
-        // =====================================================
-        // REPORTING MANAGER DETAILS
-        // =====================================================
-
-        if (employee.getReportingManager() != null) {
-
-            reportingManagerId =
-                    employee.getReportingManager().getId();
-
-            reportingManagerName =
-                    employee.getReportingManager().getFirstName()
-                            + " "
-                            + employee.getReportingManager().getLastName();
-        }
+        UUID reportingManagerId = null;
+        String reportingManagerName = null;
 
 
-        // =====================================================
-        // DEPARTMENT DETAILS
-        // =====================================================
-
-        /*
-         * Department can be null for a newly registered employee
-         * before an Admin assigns them to a department.
-         */
-
+        // Department details
         if (employee.getDepartment() != null) {
 
             departmentId =
@@ -492,26 +233,31 @@ public class EmployeeService {
         }
 
 
-        // =====================================================
-        // RETURN RESPONSE
-        // =====================================================
+        // Reporting Manager details
+        if (employee.getReportingManager() != null) {
 
+            reportingManagerId =
+                    employee.getReportingManager()
+                            .getId();
+
+            reportingManagerName =
+                    employee.getReportingManager()
+                            .getFirstName()
+                            + " "
+                            + employee.getReportingManager()
+                            .getLastName();
+        }
+
+
+        // Return response
         return EmployeeResponse.builder()
 
                 .id(
                         employee.getId()
                 )
 
-                .userId(
-                        employee.getUser().getId()
-                )
-
                 .email(
                         employee.getUser().getEmail()
-                )
-
-                .employeeCode(
-                        employee.getEmployeeCode()
                 )
 
                 .firstName(
@@ -520,10 +266,6 @@ public class EmployeeService {
 
                 .lastName(
                         employee.getLastName()
-                )
-
-                .phone(
-                        employee.getPhone()
                 )
 
                 .departmentId(
