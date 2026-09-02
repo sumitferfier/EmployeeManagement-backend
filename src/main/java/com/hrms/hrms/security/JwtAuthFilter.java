@@ -24,9 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     // =========================================================
 
     private final JwtTokenProvider jwtTokenProvider;
-
     private final UserDetailsServiceImpl userDetailsService;
-
     private final BlacklistedTokenRepository blacklistedTokenRepository;
 
 

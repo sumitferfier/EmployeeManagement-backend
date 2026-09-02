@@ -1,5 +1,4 @@
 package com.hrms.hrms.modules.admin.dto;
-
 import lombok.*;
 import java.util.UUID;
 

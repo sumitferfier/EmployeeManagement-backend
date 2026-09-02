@@ -15,9 +15,7 @@ import java.util.List;
 @Service
 public class AdminUserService {
     private final UserRepository userRepository;
-    public AdminUserService(
-            UserRepository userRepository
-    ) {
+    public AdminUserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 

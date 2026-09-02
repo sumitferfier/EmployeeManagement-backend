@@ -1,5 +1,4 @@
 package com.hrms.hrms.modules.admin.dto;
-
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -9,7 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class UserAccessRequest {
-
     @NotNull(message = "isAdmin is required")
     private Boolean isAdmin;
 

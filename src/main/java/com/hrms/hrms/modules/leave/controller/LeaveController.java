@@ -41,24 +41,12 @@ public class LeaveController {
      */
 
     @PostMapping
-    public ResponseEntity<LeaveResponse> applyLeave(
-            Authentication authentication,
+    public ResponseEntity<LeaveResponse> applyLeave(Authentication authentication,
             @Valid
             @RequestBody
-            LeaveRequest request
-    ) {
-
-        String email =
-                authentication.getName();
-
-
-        LeaveResponse response =
-                leaveService.applyLeave(
-                        email,
-                        request
-                );
-
-
+            LeaveRequest request) {
+        String email = authentication.getName();
+        LeaveResponse response = leaveService.applyLeave(email, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
@@ -78,19 +66,10 @@ public class LeaveController {
 
     @GetMapping("/my")
     public ResponseEntity<List<LeaveResponse>>
-    getMyLeaves(
-            Authentication authentication
-    ) {
-
-        String email =
-                authentication.getName();
-
-
-        return ResponseEntity.ok(
-                leaveService.getMyLeaves(email)
-        );
+    getMyLeaves(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(leaveService.getMyLeaves(email));
     }
-
 
     // =========================================================
     // GET MANAGER TEAM LEAVES
@@ -103,6 +82,16 @@ public class LeaveController {
      * Manager sees leaves of employees
      * who report directly to them.
      */
+
+
+    // Admin Can See All the leaves(PENDING, APPROVED, REJECTED)
+    @GetMapping("/admin")
+    public ResponseEntity<List<LeaveResponse>> getAllLeavesForAdmin() {
+
+        return ResponseEntity.ok(
+                leaveService.getAllLeavesForAdmin()
+        );
+    }
 
     @GetMapping("/team")
     public ResponseEntity<List<LeaveResponse>>

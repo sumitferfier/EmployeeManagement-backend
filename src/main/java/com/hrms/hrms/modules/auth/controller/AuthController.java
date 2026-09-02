@@ -6,7 +6,6 @@ import com.hrms.hrms.modules.auth.dto.RegisterRequest;
 import com.hrms.hrms.modules.auth.dto.RegisterResponse;
 import com.hrms.hrms.modules.auth.service.AuthService;
 import org.springframework.http.HttpHeaders;
-
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,11 +16,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
-
 
     // REGISTER
     // Public endpoint.
@@ -29,12 +26,10 @@ public class AuthController {
     // No JWT is required for registration.
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(
-            @Valid @RequestBody RegisterRequest request
-    ) {
+            @Valid @RequestBody RegisterRequest request) {
         RegisterResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
 
     // LOGIN
     // Public endpoint.

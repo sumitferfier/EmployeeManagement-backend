@@ -3,12 +3,9 @@ package com.hrms.hrms.modules.admin.controller;
 import com.hrms.hrms.modules.admin.dto.UserAccessRequest;
 import com.hrms.hrms.modules.admin.dto.UserAccessResponse;
 import com.hrms.hrms.modules.admin.service.AdminUserService;
-
 import jakarta.validation.Valid;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -16,9 +13,7 @@ import java.util.List;
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
-    public AdminUserController(
-            AdminUserService adminUserService
-    ) {
+    public AdminUserController(AdminUserService adminUserService) {
         this.adminUserService = adminUserService;
     }
 

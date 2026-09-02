@@ -1,24 +1,18 @@
 package com.hrms.hrms.modules.leave.service;
-
 import com.hrms.hrms.common.exception.BadRequestException;
 import com.hrms.hrms.common.exception.ResourceNotFoundException;
-
 import com.hrms.hrms.modules.employee.entity.Employee;
 import com.hrms.hrms.modules.employee.repository.EmployeeRepository;
-
 import com.hrms.hrms.modules.leave.dto.LeaveRequest;
 import com.hrms.hrms.modules.leave.dto.LeaveResponse;
 import com.hrms.hrms.modules.leave.entity.Leave;
 import com.hrms.hrms.modules.leave.entity.LeaveStatus;
 import com.hrms.hrms.modules.leave.repository.LeaveRepository;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-
 
 @Service
 public class LeaveService {
@@ -29,18 +23,14 @@ public class LeaveService {
     // =====================================================
 
     private final LeaveRepository leaveRepository;
-
     private final EmployeeRepository employeeRepository;
-
 
     // =====================================================
     // CONSTRUCTOR
     // =====================================================
-
     public LeaveService(
             LeaveRepository leaveRepository,
-            EmployeeRepository employeeRepository
-    ) {
+            EmployeeRepository employeeRepository) {
 
         this.leaveRepository = leaveRepository;
         this.employeeRepository = employeeRepository;
@@ -235,6 +225,16 @@ public class LeaveService {
 
         return leaveRepository
                 .findByEmployeeEmail(email)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+//    get All leaves for Admin
+    @Transactional(readOnly = true)
+    public List<LeaveResponse> getAllLeavesForAdmin() {
+
+        return leaveRepository.findAllLeavesForAdmin()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

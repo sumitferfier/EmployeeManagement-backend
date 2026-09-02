@@ -12,13 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 
-public interface LeaveRepository
-        extends JpaRepository<Leave, UUID> {
-
-
-    // =====================================================
-    // EMPLOYEE LEAVE HISTORY
-    // =====================================================
+public interface LeaveRepository extends JpaRepository<Leave, UUID> {
 
     @Query("""
             SELECT l
@@ -28,30 +22,14 @@ public interface LeaveRepository
             WHERE LOWER(u.email) = LOWER(:email)
             ORDER BY l.fromDate DESC
             """)
-    List<Leave> findByEmployeeEmail(
-            @Param("email") String email
-    );
+    List<Leave> findByEmployeeEmail(@Param("email") String email);
 
-
-    // =====================================================
-    // MANAGER TEAM LEAVES
-    // =====================================================
-
-    /*
-     * Employee now stores reporting manager
-     * as an email instead of Employee relationship.
-     *
-     * employees.reporting_manager_email
-     *              ↓
-     * manager's user email
-     */
 
     @Query("""
             SELECT l
             FROM Leave l
             JOIN l.employee e
-            WHERE LOWER(e.reportingManagerEmail)
-                  = LOWER(:managerEmail)
+            WHERE LOWER(e.reportingManagerEmail) = LOWER(:managerEmail)
             ORDER BY l.fromDate DESC
             """)
     List<Leave> findTeamLeaves(
@@ -59,16 +37,11 @@ public interface LeaveRepository
     );
 
 
-    // =====================================================
-    // PENDING TEAM LEAVES
-    // =====================================================
-
     @Query("""
             SELECT l
             FROM Leave l
             JOIN l.employee e
-            WHERE LOWER(e.reportingManagerEmail)
-                  = LOWER(:managerEmail)
+            WHERE LOWER(e.reportingManagerEmail) = LOWER(:managerEmail)
             AND l.status = :status
             ORDER BY l.fromDate ASC
             """)
@@ -77,10 +50,6 @@ public interface LeaveRepository
             @Param("status") LeaveStatus status
     );
 
-
-    // =====================================================
-    // CHECK OVERLAPPING LEAVE
-    // =====================================================
 
     @Query("""
             SELECT COUNT(l)
@@ -98,4 +67,19 @@ public interface LeaveRepository
             @Param("toDate") LocalDate toDate,
             @Param("statuses") List<LeaveStatus> statuses
     );
+
+
+    // =====================================================
+    // ADMIN - ALL LEAVES
+    // =====================================================
+
+    @Query("""
+            SELECT l
+            FROM Leave l
+            JOIN FETCH l.employee e
+            JOIN FETCH e.user u
+            LEFT JOIN FETCH e.department d
+            ORDER BY l.fromDate DESC
+            """)
+    List<Leave> findAllLeavesForAdmin();
 }

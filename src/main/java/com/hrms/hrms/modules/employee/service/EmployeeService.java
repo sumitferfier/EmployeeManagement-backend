@@ -63,10 +63,7 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public EmployeeResponse getEmployeeByEmail(String email) {
-
-        Employee employee =
-                findEmployeeByEmail(email);
-
+        Employee employee = findEmployeeByEmail(email);
         return mapToResponse(employee);
     }
 
@@ -77,7 +74,6 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public EmployeeResponse getMyProfile(String email) {
-
         return getEmployeeByEmail(email);
     }
 
@@ -345,20 +341,10 @@ public class EmployeeService {
     // FIND EMPLOYEE BY EMAIL
     // =========================================================
 
-    private Employee findEmployeeByEmail(
-            String email
-    ) {
-
-        return employeeRepository
-                .findByUserEmail(
-                        email.trim()
-                )
+    private Employee findEmployeeByEmail(String email) {
+        return employeeRepository.findByUserEmail(email.trim())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Employee not found with email: "
-                                        + email
-                        )
-                );
+                        new ResourceNotFoundException("Employee not found with email: " + email));
     }
 
 

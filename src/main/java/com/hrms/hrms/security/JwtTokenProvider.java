@@ -56,11 +56,7 @@ public class JwtTokenProvider {
     ) {
 
         Date now = new Date();
-
-        Date expiryDate = new Date(
-                now.getTime() + expiration
-        );
-
+        Date expiryDate = new Date(now.getTime() + expiration);
         return Jwts.builder()
 
                 // JWT subject = user email
@@ -76,7 +72,6 @@ public class JwtTokenProvider {
 
                 // Sign token
                 .signWith(secretKey)
-
                 .compact();
     }
 
@@ -86,7 +81,6 @@ public class JwtTokenProvider {
     // =========================================================
 
     public String extractEmail(String token) {
-
         return getClaims(token).getSubject();
     }
 
@@ -96,10 +90,8 @@ public class JwtTokenProvider {
     // =========================================================
 
     public boolean isAdminFromToken(String token) {
-
         Boolean isAdmin = getClaims(token)
                 .get("isAdmin", Boolean.class);
-
         return Boolean.TRUE.equals(isAdmin);
     }
 
@@ -112,7 +104,6 @@ public class JwtTokenProvider {
 
         Boolean isEmployee = getClaims(token)
                 .get("isEmployee", Boolean.class);
-
         return Boolean.TRUE.equals(isEmployee);
     }
 
@@ -120,7 +111,6 @@ public class JwtTokenProvider {
     // =========================================================
     // VALIDATE JWT TOKEN
     // =========================================================
-
     public boolean validateToken(String token) {
 
         try {
@@ -131,9 +121,7 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token);
 
             return true;
-
         } catch (JwtException | IllegalArgumentException exception) {
-
             return false;
         }
     }
@@ -143,7 +131,6 @@ public class JwtTokenProvider {
 // =========================================================
 
     public Date extractExpiration(String token) {
-
         return getClaims(token)
                 .getExpiration();
     }
@@ -154,7 +141,6 @@ public class JwtTokenProvider {
     // =========================================================
 
     private Claims getClaims(String token) {
-
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
