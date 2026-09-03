@@ -421,7 +421,7 @@ public class LeaveService {
     ) {
 
         return employeeRepository
-                .findByUserEmail(
+                .findByUser_Email(
                         email.trim()
                 )
                 .orElseThrow(() ->

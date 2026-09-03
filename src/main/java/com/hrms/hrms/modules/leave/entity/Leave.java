@@ -69,11 +69,7 @@ public class Leave {
     )
     private String requestedTo;
 
-
-    // =====================================================
     // LEAVE TYPE
-    // =====================================================
-
     @Enumerated(EnumType.STRING)
     @Column(
             name = "leave_type",
@@ -81,33 +77,21 @@ public class Leave {
     )
     private LeaveType leaveType;
 
-
-    // =====================================================
     // FROM DATE
-    // =====================================================
-
     @Column(
             name = "from_date",
             nullable = false
     )
     private LocalDate fromDate;
 
-
-    // =====================================================
     // TO DATE
-    // =====================================================
-
     @Column(
             name = "to_date",
             nullable = false
     )
     private LocalDate toDate;
 
-
-    // =====================================================
     // REASON
-    // =====================================================
-
     @Column(
             name = "reason",
             nullable = false,
@@ -115,17 +99,7 @@ public class Leave {
     )
     private String reason;
 
-
-    // =====================================================
-    // STATUS
-    // =====================================================
-
-    /*
-     * PENDING
-     * APPROVED
-     * REJECTED
-     */
-
+    // STATUS, PENDING, APPROVED, REJECTED
     @Enumerated(EnumType.STRING)
     @Column(
             name = "status",

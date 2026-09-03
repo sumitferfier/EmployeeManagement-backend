@@ -259,7 +259,7 @@ public class EmployeeService {
 
                 Employee manager =
                         employeeRepository
-                                .findByUserEmail(
+                                .findByUser_Email(
                                         managerEmail
                                 )
                                 .orElseThrow(() ->
@@ -269,11 +269,7 @@ public class EmployeeService {
                                         )
                                 );
 
-
-                // -------------------------------------------------
                 // GET ACTUAL USER EMAIL
-                // -------------------------------------------------
-
                 String actualManagerEmail =
                         manager.getUser()
                                 .getEmail()
@@ -281,39 +277,23 @@ public class EmployeeService {
                                 .toLowerCase();
 
 
-                // -------------------------------------------------
                 // SAVE MANAGER EMAIL
-                // -------------------------------------------------
-
                 employee.setReportingManagerEmail(
                         actualManagerEmail
                 );
             }
         }
 
-
-        // =====================================================
         // STEP 6: SAVE EMPLOYEE
-        // =====================================================
+        Employee updatedEmployee =   employeeRepository.save(employee);
 
-        Employee updatedEmployee =
-                employeeRepository.save(employee);
-
-
-        // =====================================================
         // STEP 7: RETURN RESPONSE
-        // =====================================================
-
         return mapToResponse(
                 updatedEmployee
         );
     }
 
-
-    // =========================================================
     // GET MANAGER TEAM
-    // =========================================================
-
     /*
      * Finds all employees whose
      * reporting_manager_email matches
@@ -324,7 +304,6 @@ public class EmployeeService {
     public List<EmployeeResponse> getEmployeeTeam(
             String managerEmail
     ) {
-
         return employeeRepository
                 .findByReportingManagerEmail(
                         managerEmail
@@ -336,22 +315,14 @@ public class EmployeeService {
                 .toList();
     }
 
-
-    // =========================================================
     // FIND EMPLOYEE BY EMAIL
-    // =========================================================
-
     private Employee findEmployeeByEmail(String email) {
-        return employeeRepository.findByUserEmail(email.trim())
+        return employeeRepository.findByUser_Email(email.trim())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Employee not found with email: " + email));
     }
 
-
-    // =========================================================
     // ENTITY → RESPONSE DTO
-    // =========================================================
-
     private EmployeeResponse mapToResponse(
             Employee employee
     ) {
@@ -359,27 +330,13 @@ public class EmployeeService {
         UUID departmentId = null;
         String departmentName = null;
 
-
-        // =====================================================
         // DEPARTMENT DETAILS
-        // =====================================================
-
         if (employee.getDepartment() != null) {
-
-            departmentId =
-                    employee.getDepartment()
-                            .getId();
-
-            departmentName =
-                    employee.getDepartment()
-                            .getDepartmentName();
+            departmentId = employee.getDepartment().getId();
+            departmentName = employee.getDepartment().getDepartmentName();
         }
 
-
-        // =====================================================
         // RESPONSE
-        // =====================================================
-
         return EmployeeResponse.builder()
 
                 // Employee ID

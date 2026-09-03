@@ -9,10 +9,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoleResponse {
-    private UUID id;
+public class UserAccessResponse {
     private UUID userId;
     private String email;
     private boolean isAdmin;
     private boolean isEmployee;
+    private String status;
+    private String message;
 }

@@ -84,7 +84,7 @@ public class LeaveController {
      */
 
 
-    // Admin Can See All the leaves(PENDING, APPROVED, REJECTED)
+    // Admin Can See All the leaves()PENDING, APPROVED, REJECTED)
     @GetMapping("/admin")
     public ResponseEntity<List<LeaveResponse>> getAllLeavesForAdmin() {
 

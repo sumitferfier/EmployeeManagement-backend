@@ -1,250 +1,192 @@
 package com.hrms.hrms.modules.role.service;
 
-import com.hrms.hrms.common.exception.DuplicateResourceException;
 import com.hrms.hrms.common.exception.ResourceNotFoundException;
-
-import com.hrms.hrms.modules.role.dto.RoleRequest;
+import com.hrms.hrms.modules.auth.entity.User;
+import com.hrms.hrms.modules.auth.repository.UserRepository;
+import com.hrms.hrms.modules.employee.entity.Employee;
+import com.hrms.hrms.modules.employee.entity.EmployeeStatus;
+import com.hrms.hrms.modules.employee.repository.EmployeeRepository;
 import com.hrms.hrms.modules.role.dto.RoleResponse;
-
+import com.hrms.hrms.modules.role.dto.UserAccessRequest;
+import com.hrms.hrms.modules.role.dto.UserAccessResponse;
 import com.hrms.hrms.modules.role.entity.Role;
 import com.hrms.hrms.modules.role.repository.RoleRepository;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
-
 @Service
 public class RoleService {
 
-    // =========================================================
-    // DEPENDENCY
-    // =========================================================
-
+    private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-
-
-    // =========================================================
-    // CONSTRUCTOR
-    // =========================================================
+    private final EmployeeRepository employeeRepository;
 
     public RoleService(
-            RoleRepository roleRepository
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            EmployeeRepository employeeRepository
     ) {
+        this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.employeeRepository = employeeRepository;
     }
 
-
     // =========================================================
-    // CREATE ROLE
+    // UPDATE USER ACCESS
     // =========================================================
 
     @Transactional
-    public RoleResponse createRole(
-            RoleRequest request
+    public UserAccessResponse updateUserAccess(
+            String email,
+            UserAccessRequest request
     ) {
 
-        // Convert role name to uppercase.
-        String roleName = request
-                .getRoleName()
+        // =====================================================
+        // STEP 1: FIND USER
+        // =====================================================
+
+        String normalizedEmail = email
                 .trim()
-                .toUpperCase();
+                .toLowerCase();
 
+        User user = userRepository
+                .findByEmail(normalizedEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + email
+                        )
+                );
 
-        // Check whether role already exists.
-        if (roleRepository.existsByRoleName(roleName)) {
+        // =====================================================
+        // STEP 2: FIND OR CREATE ROLE
+        // =====================================================
 
-            throw new DuplicateResourceException(
-                    "Role already exists: " + roleName
-            );
+        Role role = roleRepository
+                .findByUserId(user.getId())
+                .orElseGet(() -> {
+
+                    Role newRole = Role.builder()
+                            .user(user)
+                            .email(user.getEmail())
+                            .isAdmin(false)
+                            .isEmployee(false)
+                            .build();
+
+                    return roleRepository.save(newRole);
+                });
+
+        // =====================================================
+        // STEP 3: UPDATE ACCESS
+        // =====================================================
+
+        boolean oldEmployeeAccess = role.isEmployee();
+
+        role.setAdmin(request.getIsAdmin());
+        role.setEmployee(request.getIsEmployee());
+
+        // Keep role email synchronized with user email
+        role.setEmail(user.getEmail());
+
+        Role updatedRole = roleRepository.save(role);
+
+        // =====================================================
+        // STEP 4: CREATE EMPLOYEE PROFILE
+        // =====================================================
+
+        /*
+         * If the user is being given Employee access for
+         * the first time, create an Employee record.
+         */
+        if (!oldEmployeeAccess && updatedRole.isEmployee()) {
+
+            createEmployeeProfileIfNotExists(user);
         }
 
+        // =====================================================
+        // STEP 5: RETURN RESPONSE
+        // =====================================================
 
-        // Create Role entity.
-        Role role = Role.builder()
-
-                .roleName(roleName)
-
-                .description(
-                        request.getDescription()
-                )
-
+        return UserAccessResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .isAdmin(updatedRole.isAdmin())
+                .isEmployee(updatedRole.isEmployee())
+                .status(user.getStatus().name())
+                .message("User access updated successfully")
                 .build();
-
-
-        // Save role.
-        Role savedRole =
-                roleRepository.save(role);
-
-
-        // Return response.
-        return mapToResponse(savedRole);
     }
 
-
     // =========================================================
-    // GET ALL ROLES
+    // CREATE EMPLOYEE PROFILE
     // =========================================================
 
+    private void createEmployeeProfileIfNotExists(User user) {
+
+        boolean employeeExists =
+                employeeRepository
+                        .findByUser_Email(user.getEmail())
+                        .isPresent();
+
+        if (employeeExists) {
+            return;
+        }
+
+        /*
+         * Copy basic information from User to Employee.
+         *
+         * User:
+         * firstName
+         * lastName
+         *
+         * Employee:
+         * firstName
+         * lastName
+         */
+
+        Employee employee = Employee.builder()
+                .user(user)
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .status(EmployeeStatus.ACTIVE)
+                .build();
+
+        employeeRepository.save(employee);
+    }
+
+    // GET ALL ROLES / ACCESS RECORDS
     @Transactional(readOnly = true)
     public List<RoleResponse> getAllRoles() {
-
-        return roleRepository
-
-                .findAll()
-
+        return roleRepository.findAll()
                 .stream()
-
                 .map(this::mapToResponse)
-
                 .toList();
     }
 
-
-    // =========================================================
     // GET ROLE BY ID
-    // =========================================================
-
     @Transactional(readOnly = true)
-    public RoleResponse getRoleById(
-            UUID id
-    ) {
-
-        Role role = roleRepository
-
-                .findById(id)
-
+    public RoleResponse getRoleById(UUID id) {
+        Role role = roleRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Role not found with ID: " + id
                         )
                 );
-
 
         return mapToResponse(role);
     }
 
-
     // =========================================================
-    // UPDATE ROLE
-    // =========================================================
-
-    @Transactional
-    public RoleResponse updateRole(
-
-            UUID id,
-
-            RoleRequest request
-    ) {
-
-        // Find existing role.
-        Role role = roleRepository
-
-                .findById(id)
-
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Role not found with ID: " + id
-                        )
-                );
-
-
-        // Prepare new role name.
-        String roleName = request
-
-                .getRoleName()
-
-                .trim()
-
-                .toUpperCase();
-
-
-        // Check duplicate role name.
-        roleRepository
-
-                .findByRoleName(roleName)
-
-                .ifPresent(existingRole -> {
-
-                    // Another role cannot have the same name.
-                    if (!existingRole.getId().equals(id)) {
-
-                        throw new DuplicateResourceException(
-                                "Role already exists: " + roleName
-                        );
-                    }
-                });
-
-
-        // Update role.
-        role.setRoleName(roleName);
-
-        role.setDescription(
-                request.getDescription()
-        );
-
-
-        // Save updated role.
-        Role updatedRole =
-                roleRepository.save(role);
-
-
-        return mapToResponse(updatedRole);
-    }
-
-
-    // =========================================================
-    // DELETE ROLE
-    // =========================================================
-
-    @Transactional
-    public void deleteRole(
-            UUID id
-    ) {
-
-        // Find role.
-        Role role = roleRepository
-
-                .findById(id)
-
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Role not found with ID: " + id
-                        )
-                );
-
-
-        // No user-role relationship exists anymore.
-        // Therefore, the role can be deleted directly.
-
-        roleRepository.delete(role);
-    }
-
-
-    // =========================================================
-    // ENTITY → DTO MAPPER
-    // =========================================================
-
-    private RoleResponse mapToResponse(
-            Role role
-    ) {
-
+    // MAP ROLE ENTITY → ROLE RESPONSE
+    private RoleResponse mapToResponse(Role role) {
         return RoleResponse.builder()
-
-                .id(
-                        role.getId()
-                )
-
-                .roleName(
-                        role.getRoleName()
-                )
-
-                .description(
-                        role.getDescription()
-                )
-
+                .id(role.getId())
+                .userId(role.getUser().getId())
+                .email(role.getEmail())
+                .isAdmin(role.isAdmin())
+                .isEmployee(role.isEmployee())
                 .build();
     }
 }
