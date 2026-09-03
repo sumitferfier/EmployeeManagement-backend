@@ -2,194 +2,165 @@ package com.hrms.hrms.modules.employee.service;
 
 import com.hrms.hrms.common.exception.BadRequestException;
 import com.hrms.hrms.common.exception.ResourceNotFoundException;
-
+import com.hrms.hrms.modules.auth.entity.User;
+import com.hrms.hrms.modules.auth.repository.UserRepository;
 import com.hrms.hrms.modules.department.entity.Department;
 import com.hrms.hrms.modules.department.repository.DepartmentRepository;
-
 import com.hrms.hrms.modules.employee.dto.EmployeeResponse;
 import com.hrms.hrms.modules.employee.dto.EmployeeUpdateRequest;
 import com.hrms.hrms.modules.employee.entity.Employee;
 import com.hrms.hrms.modules.employee.repository.EmployeeRepository;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
-
 @Service
 public class EmployeeService {
 
-    // =========================================================
-    // DEPENDENCIES
-    // =========================================================
-
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
-
-
-    // =========================================================
-    // CONSTRUCTOR
-    // =========================================================
+    private final UserRepository userRepository;
 
     public EmployeeService(
             EmployeeRepository employeeRepository,
-            DepartmentRepository departmentRepository
+            DepartmentRepository departmentRepository,
+            UserRepository userRepository
     ) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
     }
 
-
-    // =========================================================
-    // GET ALL EMPLOYEES
-    // =========================================================
-
+    /*
+     * ============================================================
+     * GET ALL USERS
+     * ============================================================
+     *
+     * This method returns EVERY registered user.
+     *
+     * It does NOT depend on the employees table.
+     *
+     * If a user has an Employee record:
+     *      employee-specific information is returned.
+     *
+     * If a user does NOT have an Employee record:
+     *      user information is still returned.
+     *      employee-specific fields will be null.
+     */
     @Transactional(readOnly = true)
     public List<EmployeeResponse> getAllEmployees() {
 
-        return employeeRepository
-                .findAll()
+        return userRepository.findAll()
                 .stream()
-                .map(this::mapToResponse)
+                .map(this::mapUserToResponse)
                 .toList();
     }
 
-
-    // =========================================================
-    // GET EMPLOYEE BY EMAIL
-    // =========================================================
-
+    /*
+     * ============================================================
+     * GET USER / EMPLOYEE BY EMAIL
+     * ============================================================
+     *
+     * This also starts from the users table.
+     *
+     * Therefore even a registered user without an Employee
+     * profile can be returned.
+     */
     @Transactional(readOnly = true)
     public EmployeeResponse getEmployeeByEmail(String email) {
-        Employee employee = findEmployeeByEmail(email);
-        return mapToResponse(employee);
+
+        String normalizedEmail = email.trim().toLowerCase();
+
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + email
+                        )
+                );
+
+        return mapUserToResponse(user);
     }
 
-
-    // =========================================================
-    // GET MY PROFILE
-    // =========================================================
-
+    /*
+     * ============================================================
+     * GET LOGGED-IN USER PROFILE
+     * ============================================================
+     */
     @Transactional(readOnly = true)
     public EmployeeResponse getMyProfile(String email) {
+
         return getEmployeeByEmail(email);
     }
 
-
-    // =========================================================
-    // UPDATE EMPLOYEE
-    // =========================================================
-
     /*
-     * PATCH
+     * ============================================================
+     * UPDATE EMPLOYEE
+     * ============================================================
      *
-     * /api/v1/employees?email=user@gmail.com
+     * This operation is only possible when an Employee record
+     * already exists.
      *
-     * Admin manages:
-     *
-     * - Department
-     * - Designation
-     * - Date Of Joining
-     * - Reporting Manager Email
-     *
-     * These are NOT changed here:
-     *
-     * - First Name
-     * - Last Name
-     * - Email
-     * - Status
-     *
-     * Those come from User Access Management.
+     * A normal registered user without an Employee profile
+     * cannot have employee-specific information updated through
+     * this method.
      */
-
     @Transactional
     public EmployeeResponse updateEmployee(
             String email,
             EmployeeUpdateRequest request
     ) {
 
-        // =====================================================
-        // STEP 1: FIND EMPLOYEE
-        // =====================================================
-
-        Employee employee =
-                findEmployeeByEmail(email);
-
-
-        // =====================================================
-        // STEP 2: DEPARTMENT
-        // =====================================================
+        Employee employee = findEmployeeByEmail(email);
 
         /*
-         * If department name is provided:
-         *
-         * 1. Search existing department.
-         * 2. If found -> use it.
-         * 3. If not found -> create it.
-         *
-         * This handles both:
-         *
-         * First assignment
-         * AND
-         * Department change.
+         * --------------------------------------------------------
+         * UPDATE DEPARTMENT
+         * --------------------------------------------------------
          */
-
-        if (
-                request.getDepartmentName() != null
-                        &&
-                        !request.getDepartmentName().isBlank()
-        ) {
+        if (request.getDepartmentName() != null
+                && !request.getDepartmentName().isBlank()) {
 
             String departmentName =
-                    request.getDepartmentName()
-                            .trim();
-
+                    request.getDepartmentName().trim();
 
             Department department =
                     departmentRepository
-                            .findByDepartmentName(
-                                    departmentName
-                            )
+                            .findByDepartmentName(departmentName)
                             .orElseGet(() -> {
 
                                 Department newDepartment =
                                         Department.builder()
-                                                .departmentName(
-                                                        departmentName
-                                                )
+                                                .departmentName(departmentName)
                                                 .build();
 
-                                return departmentRepository
-                                        .save(newDepartment);
+                                return departmentRepository.save(
+                                        newDepartment
+                                );
                             });
-
 
             employee.setDepartment(department);
         }
 
-
-        // =====================================================
-        // STEP 3: DESIGNATION
-        // =====================================================
-
-        if (
-                request.getDesignation() != null
-                        &&
-                        !request.getDesignation().isBlank()
-        ) {
+        /*
+         * --------------------------------------------------------
+         * UPDATE DESIGNATION
+         * --------------------------------------------------------
+         */
+        if (request.getDesignation() != null
+                && !request.getDesignation().isBlank()) {
 
             employee.setDesignation(
                     request.getDesignation().trim()
             );
         }
 
-
-        // =====================================================
-        // STEP 4: DATE OF JOINING
-        // =====================================================
-
+        /*
+         * --------------------------------------------------------
+         * UPDATE DATE OF JOINING
+         * --------------------------------------------------------
+         */
         if (request.getDateOfJoining() != null) {
 
             employee.setDateOfJoining(
@@ -197,71 +168,45 @@ public class EmployeeService {
             );
         }
 
-
-        // =====================================================
-        // STEP 5: REPORTING MANAGER
-        // =====================================================
-
         /*
-         * Reporting manager is stored as EMAIL.
-         *
-         * Example:
-         *
-         * reporting_manager_email
-         *          =
-         * manager@gmail.com
+         * --------------------------------------------------------
+         * UPDATE REPORTING MANAGER
+         * --------------------------------------------------------
          */
-
-        if (
-                request.getReportingManagerEmail() != null
-        ) {
+        if (request.getReportingManagerEmail() != null) {
 
             String managerEmail =
                     request.getReportingManagerEmail()
                             .trim()
                             .toLowerCase();
 
-
-            // -------------------------------------------------
-            // REMOVE REPORTING MANAGER
-            // -------------------------------------------------
-
             /*
-             * If frontend sends empty string,
-             * remove the current manager.
+             * Empty value means remove reporting manager.
              */
-
             if (managerEmail.isBlank()) {
 
                 employee.setReportingManagerEmail(null);
 
             } else {
 
-                // -------------------------------------------------
-                // EMPLOYEE CANNOT BE THEIR OWN MANAGER
-                // -------------------------------------------------
-
-                if (
-                        managerEmail.equalsIgnoreCase(
-                                email.trim()
-                        )
-                ) {
+                /*
+                 * Employee cannot report to themselves.
+                 */
+                if (managerEmail.equalsIgnoreCase(
+                        email.trim()
+                )) {
 
                     throw new BadRequestException(
                             "Employee cannot be their own reporting manager"
                     );
                 }
 
-
-                // -------------------------------------------------
-                // FIND MANAGER
-                // -------------------------------------------------
-
+                /*
+                 * Reporting manager must have an Employee profile.
+                 */
                 Employee manager =
                         employeeRepository
-                                .findByUser_Email(
-                                        managerEmail
-                                )
+                                .findByUser_Email(managerEmail)
                                 .orElseThrow(() ->
                                         new ResourceNotFoundException(
                                                 "Reporting manager not found with email: "
@@ -269,125 +214,156 @@ public class EmployeeService {
                                         )
                                 );
 
-                // GET ACTUAL USER EMAIL
                 String actualManagerEmail =
                         manager.getUser()
                                 .getEmail()
                                 .trim()
                                 .toLowerCase();
 
-
-                // SAVE MANAGER EMAIL
                 employee.setReportingManagerEmail(
                         actualManagerEmail
                 );
             }
         }
 
-        // STEP 6: SAVE EMPLOYEE
-        Employee updatedEmployee =   employeeRepository.save(employee);
+        /*
+         * Save updated employee.
+         */
+        Employee updatedEmployee =
+                employeeRepository.save(employee);
 
-        // STEP 7: RETURN RESPONSE
-        return mapToResponse(
-                updatedEmployee
-        );
+        return mapEmployeeToResponse(updatedEmployee);
     }
 
-    // GET MANAGER TEAM
     /*
-     * Finds all employees whose
-     * reporting_manager_email matches
-     * the manager's email.
+     * ============================================================
+     * GET EMPLOYEE TEAM
+     * ============================================================
      */
-
     @Transactional(readOnly = true)
     public List<EmployeeResponse> getEmployeeTeam(
             String managerEmail
     ) {
+
         return employeeRepository
                 .findByReportingManagerEmail(
-                        managerEmail
-                                .trim()
-                                .toLowerCase()
+                        managerEmail.trim().toLowerCase()
                 )
                 .stream()
-                .map(this::mapToResponse)
+                .map(this::mapEmployeeToResponse)
                 .toList();
     }
 
-    // FIND EMPLOYEE BY EMAIL
+    /*
+     * ============================================================
+     * FIND EMPLOYEE BY EMAIL
+     * ============================================================
+     *
+     * Used for operations that specifically require an
+     * Employee record.
+     */
     private Employee findEmployeeByEmail(String email) {
-        return employeeRepository.findByUser_Email(email.trim())
+
+        return employeeRepository
+                .findByUser_Email(
+                        email.trim().toLowerCase()
+                )
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Employee not found with email: " + email));
+                        new ResourceNotFoundException(
+                                "Employee not found with email: "
+                                        + email
+                        )
+                );
     }
 
-    // ENTITY → RESPONSE DTO
-    private EmployeeResponse mapToResponse(
+    /*
+     * ============================================================
+     * MAP USER TO RESPONSE
+     * ============================================================
+     *
+     * This is the most important new method.
+     *
+     * We ALWAYS have a User.
+     *
+     * Employee may or may not exist.
+     */
+    private EmployeeResponse mapUserToResponse(User user) {
+
+        /*
+         * Try to find the Employee profile.
+         */
+        Employee employee =
+                employeeRepository
+                        .findByUser_Email(user.getEmail())
+                        .orElse(null);
+
+        /*
+         * If Employee profile does NOT exist,
+         * return the User information only.
+         */
+        if (employee == null) {
+
+            return EmployeeResponse.builder()
+                    .id(null)
+                    .userId(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .departmentId(null)
+                    .departmentName(null)
+                    .designation(null)
+                    .dateOfJoining(null)
+                    .reportingManagerEmail(null)
+                    .status(null)
+                    .build();
+        }
+
+        /*
+         * Employee profile exists.
+         * Return both User and Employee information.
+         */
+        return mapEmployeeToResponse(employee);
+    }
+
+    /*
+     * ============================================================
+     * MAP EMPLOYEE TO RESPONSE
+     * ============================================================
+     */
+    private EmployeeResponse mapEmployeeToResponse(
             Employee employee
     ) {
 
         UUID departmentId = null;
         String departmentName = null;
 
-        // DEPARTMENT DETAILS
+        /*
+         * Get department information if available.
+         */
         if (employee.getDepartment() != null) {
-            departmentId = employee.getDepartment().getId();
-            departmentName = employee.getDepartment().getDepartmentName();
+
+            departmentId =
+                    employee.getDepartment().getId();
+
+            departmentName =
+                    employee.getDepartment()
+                            .getDepartmentName();
         }
 
-        // RESPONSE
         return EmployeeResponse.builder()
-
-                // Employee ID
-                .id(
-                        employee.getId()
-                )
-
-                // Email
-                .email(
-                        employee.getUser()
-                                .getEmail()
-                )
-
-                // Name
-                .firstName(
-                        employee.getFirstName()
-                )
-
-                .lastName(
-                        employee.getLastName()
-                )
-
-                // Department
-                .departmentId(
-                        departmentId
-                )
-
-                .departmentName(
-                        departmentName
-                )
-
-                // Designation
-                .designation(
-                        employee.getDesignation()
-                )
-
-                // Joining Date
-                .dateOfJoining(
-                        employee.getDateOfJoining()
-                )
-
-                // Reporting Manager Email
+                .id(employee.getId())
+                .userId(employee.getUser().getId())
+                .email(employee.getUser().getEmail())
+                .firstName(employee.getFirstName())
+                .lastName(employee.getLastName())
+                .departmentId(departmentId)
+                .departmentName(departmentName)
+                .designation(employee.getDesignation())
+                .dateOfJoining(employee.getDateOfJoining())
                 .reportingManagerEmail(
                         employee.getReportingManagerEmail()
                 )
-
-                // Status
-                .status(
-                        employee.getStatus()
-                )
-
+                .status(employee.getStatus())
                 .build();
     }
 }

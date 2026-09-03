@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -14,58 +15,87 @@ import java.util.List;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
-    public EmployeeController(EmployeeService employeeService) {
+
+    public EmployeeController(
+            EmployeeService employeeService
+    ) {
         this.employeeService = employeeService;
     }
 
-    // GET ALL EMPLOYEES
+    /*
+     * ============================================================
+     * GET ALL REGISTERED USERS
+     * ============================================================
+     *
+     * GET /api/v1/employees
+     *
+     * Returns EVERY registered user.
+     *
+     * Employee profile information is included when available.
+     */
     @GetMapping
-    public ResponseEntity<List<EmployeeResponse>>
-    getAllEmployees() {
-        return ResponseEntity.ok(employeeService.getAllEmployees());
+    public ResponseEntity<List<EmployeeResponse>> getAllEmployees() {
+        return ResponseEntity.ok(
+                employeeService.getAllEmployees()
+        );
     }
 
-    // =====================================================
-    // GET EMPLOYEE BY EMAIL
-    // =====================================================
-
+    /*
+     * ============================================================
+     * GET USER BY EMAIL
+     * ============================================================
+     *
+     * GET /api/v1/employees?email=sumit@ferfier.com
+     */
     @GetMapping(params = "email")
-    public ResponseEntity<EmployeeResponse>
-    getEmployeeByEmail(
+    public ResponseEntity<EmployeeResponse> getEmployeeByEmail(
             @RequestParam String email
     ) {
 
         return ResponseEntity.ok(
-                employeeService.getEmployeeByEmail(
-                        email
-                )
+                employeeService.getEmployeeByEmail(email)
         );
     }
 
-
-    // =====================================================
-    // GET MY PROFILE
-    // =====================================================
-
+    /*
+     * ============================================================
+     * GET LOGGED-IN USER
+     * ============================================================
+     *
+     * GET /api/v1/employees/me
+     *
+     * Email comes from JWT Authentication.
+     */
     @GetMapping("/me")
-    public ResponseEntity<EmployeeResponse> getMyProfile(Authentication authentication) {
+    public ResponseEntity<EmployeeResponse> getMyProfile(
+            Authentication authentication
+    ) {
+
         String email = authentication.getName();
-        return ResponseEntity.ok(employeeService.getMyProfile(email));
+
+        return ResponseEntity.ok(
+                employeeService.getMyProfile(email)
+        );
     }
 
-
-    // =====================================================
-    // UPDATE EMPLOYEE
-    // =====================================================
-
+    /*
+     * ============================================================
+     * UPDATE EMPLOYEE
+     * ============================================================
+     *
+     * PATCH /api/v1/employees?email=...
+     */
     @PatchMapping
-    public ResponseEntity<EmployeeResponse>
-    updateEmployee(
+    public ResponseEntity<EmployeeResponse> updateEmployee(
             @RequestParam String email,
-            @Valid // tells spring to perform validations on DTO...
-            @RequestBody // reads request body...
-            EmployeeUpdateRequest request) {
+            @Valid @RequestBody EmployeeUpdateRequest request
+    ) {
+
         return ResponseEntity.ok(
-                employeeService.updateEmployee(email, request));
+                employeeService.updateEmployee(
+                        email,
+                        request
+                )
+        );
     }
 }

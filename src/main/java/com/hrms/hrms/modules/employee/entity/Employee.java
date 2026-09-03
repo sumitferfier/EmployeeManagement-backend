@@ -2,19 +2,12 @@ package com.hrms.hrms.modules.employee.entity;
 
 import com.hrms.hrms.modules.auth.entity.User;
 import com.hrms.hrms.modules.department.entity.Department;
-
 import jakarta.persistence.*;
-
 import lombok.*;
-
 import java.time.LocalDate;
 import java.util.UUID;
 
-
-// =========================================================
 // EMPLOYEE ENTITY
-// =========================================================
-
 @Entity
 @Table(name = "employees")
 @Getter
@@ -24,20 +17,12 @@ import java.util.UUID;
 @Builder
 public class Employee {
 
-
-    // =====================================================
     // PRIMARY KEY
-    // =====================================================
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-
-    // =====================================================
     // USER ACCOUNT
-    // =====================================================
-
     /*
      * One Employee has one User account.
      *
@@ -63,11 +48,7 @@ public class Employee {
     @Column(name = "phone")
     private String phone;
 
-
-    // =====================================================
     // DEPARTMENT
-    // =====================================================
-
     /*
      * Department is assigned by Admin.
      */
@@ -76,11 +57,7 @@ public class Employee {
     @JoinColumn(name = "department_id")
     private Department department;
 
-
-    // =====================================================
     // JOB INFORMATION
-    // =====================================================
-
     @Column(name = "designation")
     private String designation;
 
@@ -88,10 +65,7 @@ public class Employee {
     @Column(name = "date_of_joining")
     private LocalDate dateOfJoining;
 
-
-    // =====================================================
     // REPORTING MANAGER
-    // =====================================================
 
     /*
      * Reporting manager is identified using EMAIL.

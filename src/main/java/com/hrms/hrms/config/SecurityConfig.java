@@ -143,11 +143,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/employees/**")
                     .hasRole("ADMIN")
 
-
-                    // =====================================================
                     // LEAVE APIs
-                    // =====================================================
-
                     .requestMatchers("/api/v1/leaves/admin")
                     .hasRole("ADMIN")
 

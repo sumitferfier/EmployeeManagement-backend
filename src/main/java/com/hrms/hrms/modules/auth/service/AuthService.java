@@ -228,9 +228,7 @@ public class AuthService {
                  * Names come from Employee if employee
                  * profile exists.
                  *
-                 * Otherwise use User names.
                  */
-
                 .firstName(
                         employee != null
                                 ? employee.getFirstName()
@@ -246,10 +244,7 @@ public class AuthService {
                 .build();
     }
 
-    // =========================================================
     // USER LOGOUT
-    // =========================================================
-
     @Transactional
     public void logout(String token) {
 
